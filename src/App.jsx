@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import HomePage from './pages/HomePage';
 import ReportPage from './pages/ReportPage';
@@ -11,6 +11,8 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardAdminMaster from './pages/DashboardAdminMaster';
 import FacilityCategoriesPage from './pages/FacilityCategoriesPage';
 import FacilityDetailPage from './pages/FacilityDetailPage';
+import ProtectedRoute from './routes/ProtectedRoute';
+import { isLoggedIn } from './services/authApi';
 
 function App() {
   return (
@@ -42,15 +44,40 @@ function App() {
       />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/report" element={<ReportPage />} />
-        <Route path="/tracking" element={<TrackingPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={isLoggedIn() ? <Navigate to="/profile" replace /> : <LoginPage />} />
+        <Route path="/register" element={isLoggedIn() ? <Navigate to="/profile" replace /> : <RegisterPage />} />
         <Route path="/admin-login" element={<AdminLoginPage />} />
-        <Route path="/admin/master" element={<DashboardAdminMaster />} />
-        <Route path="/fasilitas" element={<FacilityCategoriesPage />} />
-        <Route path="/fasilitas/:id" element={<FacilityDetailPage />} />
+        
+        <Route path="/report" element={
+          <ProtectedRoute>
+            <ReportPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/tracking" element={
+          <ProtectedRoute>
+            <TrackingPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/master" element={
+          <ProtectedRoute>
+            <DashboardAdminMaster />
+          </ProtectedRoute>
+        } />
+        <Route path="/fasilitas" element={
+          <ProtectedRoute>
+            <FacilityCategoriesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/fasilitas/:id" element={
+          <ProtectedRoute>
+            <FacilityDetailPage />
+          </ProtectedRoute>
+        } />
       </Routes>
     </Router>
   );
