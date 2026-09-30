@@ -25,7 +25,7 @@ function LoginPage() {
       toast.success('Login Berhasil');
       navigate('/profile');
     } else {
-      toast.error(result.error);
+      toast.error(result.error || 'Login gagal');
     }
   };
 
@@ -99,7 +99,7 @@ function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-md shadow-blue-600/20 transition disabled:opacity-50"
+            className="w-full mt-2 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-md shadow-blue-600/20 transition disabled:opacity-50 cursor-pointer disabled:hover:bg-blue-600"
           >
             {loading ? 'Memproses...' : 'Masuk'}
           </button>
