@@ -23,7 +23,7 @@ function LoginPage() {
 
     if (result.success) {
       toast.success('Login Berhasil');
-      navigate('/profile');
+      navigate('/');
     } else {
       toast.error(result.error || 'Login gagal');
     }

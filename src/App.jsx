@@ -12,7 +12,7 @@ import DashboardAdminMaster from './pages/DashboardAdminMaster';
 import FacilityCategoriesPage from './pages/FacilityCategoriesPage';
 import FacilityDetailPage from './pages/FacilityDetailPage';
 import ProtectedRoute from './routes/ProtectedRoute';
-import { isLoggedIn } from './services/authApi';
+import PublicRoute from './routes/PublicRoute';
 
 function App() {
   return (
@@ -44,8 +44,16 @@ function App() {
       />
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={isLoggedIn() ? <Navigate to="/profile" replace /> : <LoginPage />} />
-        <Route path="/register" element={isLoggedIn() ? <Navigate to="/profile" replace /> : <RegisterPage />} />
+        <Route path="/login" element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        } />
+        <Route path="/register" element={
+          <PublicRoute>
+            <RegisterPage />
+          </PublicRoute>
+        } />
         <Route path="/admin-login" element={<AdminLoginPage />} />
         
         <Route path="/report" element={

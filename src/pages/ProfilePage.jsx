@@ -13,6 +13,8 @@ import { getUserProfile, logoutUser } from '../services/userApi';
 import { INITIAL_REPORTS } from '../utils/mockData';
 import toast from 'react-hot-toast';
 
+import { logout } from '../services/authApi';
+
 function ProfilePage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
@@ -47,7 +49,7 @@ function ProfilePage() {
 
   const handleLogout = async () => {
     if (window.confirm('Yakin ingin keluar?')) {
-      await logoutUser();
+      logout();
       toast.success('Berhasil keluar');
       navigate('/login');
     }
