@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X, Zap, Camera, ArrowLeft, MapPin, Send, CheckCircle2 } from 'lucide-react';
+import { X, Zap, Camera, ArrowLeft, MapPin, Send, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 
 function CameraStep({ onCapture, onClose }) {
   const fileInputRef = React.useRef(null);
@@ -134,10 +134,96 @@ function DetailFormStep({ photoUrl, onBack, onSubmit }) {
           onClick={handleSubmit}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl py-3 flex items-center justify-center gap-2 text-sm"
         >
-          Kirim Laporan
+          Preview Laporan
           <Send className="w-4 h-4" />
         </button>
       </div>
+    </div>
+  );
+}
+function PreviewStep({ 
+  photoUrl, 
+  formData, 
+  timestamp, 
+  coordinates, 
+  onEdit, 
+  onSubmit,
+  isSubmitting
+}) {
+  const formatDate = (date) => {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+    const dayName = days[date.getDay()];
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${dayName}, ${day} ${month} ${year} - ${hours}:${minutes}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28">
+      <div className="bg-white border-b border-slate-100 px-4 py-3.5 sticky top-0 z-10">
+        <h1 className="font-semibold text-slate-900 text-sm text-center">Validasi Laporan</h1>
+      </div>
+
+      <div className="p-4">
+        <img src={photoUrl} alt="Preview" className="w-full h-40 object-cover rounded-xl shadow-sm" />
+      </div>
+
+      <div className="px-4 space-y-4 pb-4">
+        <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-4">
+          <div>
+            <label className="text-[10px] uppercase font-bold text-slate-400">Lokasi Kejadian</label>
+            <p className="text-sm font-medium text-slate-800 mt-1">{formData.lokasi}</p>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase font-bold text-slate-400">Kategori</label>
+            <p className="text-sm font-medium text-slate-800 mt-1">{formData.kategori}</p>
+          </div>
+          <div>
+            <label className="text-[10px] uppercase font-bold text-slate-400">Deskripsi</label>
+            <p className="text-sm text-slate-800 mt-1">{formData.deskripsi}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Waktu</label>
+              <p className="text-xs text-slate-600 mt-1">{formatDate(timestamp)}</p>
+            </div>
+            <div>
+              <label className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1"><MapPin className="w-3 h-3" /> Koordinat</label>
+              <p className="text-xs text-slate-600 mt-1">{coordinates.lat}, {coordinates.lng}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto bg-white border-t border-slate-100 p-4 grid grid-cols-2 gap-3">
+        <button 
+          onClick={onEdit}
+          disabled={isSubmitting}
+          className="text-slate-600 font-medium rounded-xl py-3 text-sm border border-slate-200 disabled:opacity-50"
+        >
+          Edit Laporan
+        </button>
+        <button 
+          onClick={onSubmit}
+          disabled={isSubmitting}
+          className="bg-blue-600 text-white font-medium rounded-xl py-3 flex items-center justify-center gap-2 text-sm disabled:opacity-70"
+        >
+          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Kirim Final'}
+        </button>
+      </div>
+
+      {isSubmitting && (
+        <div className="fixed inset-0 max-w-[430px] mx-auto bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 flex flex-col items-center gap-3">
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+            <p className="text-sm font-medium text-slate-800">Mengirim laporan...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -170,6 +256,10 @@ function ReportPage() {
   const [step, setStep] = React.useState(location.state?.photoUrl ? 'form' : 'camera');
   const [photoUrl, setPhotoUrl] = React.useState(location.state?.photoUrl || null);
   const [ticketId, setTicketId] = React.useState('');
+  const [reportData, setReportData] = React.useState(null);
+  const [submitTime, setSubmitTime] = React.useState(null);
+  const [gpsCoords, setGpsCoords] = React.useState({ lat: -6.8938, lng: 112.2140 });
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (location.state?.photoUrl) {
@@ -183,18 +273,60 @@ function ReportPage() {
     setStep('form');
   };
 
-  const handleSubmit = (formData) => {
-    console.log('Submitting report:', formData);
-    const id = `LPF-${new Date().getFullYear()}${String(Math.floor(Math.random() * 900) + 100)}`;
+  const handleFormSubmit = (formData) => {
+    setReportData(formData);
+    setSubmitTime(new Date());
+    
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setGpsCoords({
+            lat: position.coords.latitude.toFixed(4),
+            lng: position.coords.longitude.toFixed(4)
+          });
+        },
+        (error) => {
+          console.log('GPS tidak tersedia, menggunakan koordinat default Lamongan');
+        }
+      );
+    }
+    
+    setStep('preview');
+  };
+
+  const handleFinalSubmit = async () => {
+    setIsSubmitting(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    const id = `LPF-${new Date().getFullYear()}${String(Math.floor(Math.random() * 90000) + 10000)}`;
     setTicketId(id);
+    setIsSubmitting(false);
     setStep('success');
+  };
+
+  const handleEdit = () => {
+    setStep('form');
   };
 
   if (step === 'camera') {
     return <CameraStep onCapture={handleCapture} onClose={() => navigate('/')} />;
   }
   if (step === 'form') {
-    return <DetailFormStep photoUrl={photoUrl} onBack={() => navigate('/')} onSubmit={handleSubmit} />;
+    return <DetailFormStep photoUrl={photoUrl} onBack={() => navigate('/')} onSubmit={handleFormSubmit} />;
+  }
+  if (step === 'preview') {
+    return (
+      <PreviewStep 
+        photoUrl={photoUrl}
+        formData={reportData}
+        timestamp={submitTime}
+        coordinates={gpsCoords}
+        onEdit={handleEdit}
+        onSubmit={handleFinalSubmit}
+        isSubmitting={isSubmitting}
+      />
+    );
   }
   return <SuccessStep ticketId={ticketId} onDone={() => navigate('/')} />;
 }
