@@ -71,7 +71,7 @@ function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col justify-between p-5 pb-10 relative">
+    <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto flex flex-col justify-between p-5 pb-10 relative">
 
       <div>
         <div className="flex items-center justify-center mt-4 mb-8">
