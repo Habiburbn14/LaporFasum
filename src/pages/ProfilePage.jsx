@@ -46,7 +46,7 @@ function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto pb-28 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 rounded-full bg-emerald-200 animate-pulse mx-auto mb-4"></div>
           <p className="text-slate-500">Memuat profil...</p>
@@ -56,7 +56,7 @@ function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28">
+    <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto pb-28">
 
       {user && (
          <>

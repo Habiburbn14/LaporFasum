@@ -24,7 +24,7 @@ function DashboardAdminMaster() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Navbar />
-      <main className="flex-grow max-w-7xl mx-auto w-full px-4 py-8">
+      <main className="grow max-w-7xl mx-auto w-full px-4 py-8">
         <h1 className="text-3xl font-bold mb-8">Dashboard Admin Master - Kabupaten Lamongan</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -48,7 +48,7 @@ function DashboardAdminMaster() {
 
         <div className="bg-white p-6 rounded-lg shadow-md mb-8">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-grow">
+            <div className="grow">
               <label className="block text-sm font-medium mb-2">Filter Status</label>
               <select 
                 value={filterStatus} 
@@ -61,7 +61,7 @@ function DashboardAdminMaster() {
                 <option value="Selesai">Selesai</option>
               </select>
             </div>
-            <div className="flex-grow">
+            <div className="grow">
               <label className="block text-sm font-medium mb-2">Filter Kecamatan</label>
               <select 
                 value={filterKecamatan} 

@@ -61,9 +61,9 @@ function HomePage() {
   const latestReport = INITIAL_REPORTS[0];
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28">
+    <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto pb-28">
       {/* Header */}
-      <header className="bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 px-5 pt-6 pb-14 rounded-b-3xl relative overflow-hidden">
+      <header className="bg-linear-to-br from-blue-600 via-blue-600 to-violet-600 px-5 pt-6 pb-14 rounded-b-3xl relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
         <div className="absolute bottom-0 left-10 w-24 h-24 bg-white/5 rounded-full" />
 
@@ -180,7 +180,7 @@ function HomePage() {
               <img
                 src={report.foto}
                 alt={report.judul}
-                className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                className="w-16 h-16 rounded-xl object-cover shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-2">

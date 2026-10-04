@@ -68,8 +68,8 @@ function FacilityCategoriesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28">
-      <header className="bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 px-5 pt-6 pb-8 rounded-b-3xl relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto pb-28">
+      <header className="bg-linear-to-br from-blue-600 via-blue-600 to-violet-600 px-5 pt-6 pb-8 rounded-b-3xl relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
         <div className="absolute bottom-0 left-10 w-24 h-24 bg-white/5 rounded-full" />
 
@@ -115,7 +115,7 @@ function FacilityCategoriesPage() {
                    className="group"
                  >
                    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-blue-200 transition-all duration-300">
-                     <div className={`bg-gradient-to-br ${CATEGORY_BG[cat.color]} p-6 flex items-center justify-center h-32 relative overflow-hidden`}>
+                     <div className={`bg-linear-to-br ${CATEGORY_BG[cat.color]} p-6 flex items-center justify-center h-32 relative overflow-hidden`}>
                        <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
                        <Icon className="w-12 h-12 text-white relative z-10" />
                      </div>
