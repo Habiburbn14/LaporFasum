@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ShieldAlert, ArrowLeft } from 'lucide-react';
-import { registerUser } from '../services/authApi';
+import { Mail, Lock, User, Eye, EyeOff, ShieldAlert, ArrowLeft, MapPin, Home } from 'lucide-react';
+import { registerUser, getKecamatan } from '../services/authApi';
 import toast from 'react-hot-toast';
 
 function RegisterPage() {
@@ -11,18 +11,32 @@ function RegisterPage() {
     nik: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    alamat_domisili: '',
+    id_kecamatan: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showNik, setShowNik] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [kecamatanList, setKecamatanList] = useState([]);
+  const [loadingKecamatan, setLoadingKecamatan] = useState(false);
+
+  useEffect(() => {
+    const fetchKecamatan = async () => {
+      setLoadingKecamatan(true);
+      const data = await getKecamatan();
+      setKecamatanList(data);
+      setLoadingKecamatan(false);
+    };
+    fetchKecamatan();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.nama || !formData.nik || !formData.email || !formData.password) {
+    if (!formData.nama || !formData.nik || !formData.email || !formData.password || !formData.alamat_domisili || !formData.id_kecamatan) {
       toast.error('Semua field harus diisi');
       return;
     }
@@ -38,7 +52,14 @@ function RegisterPage() {
     }
 
     setLoading(true);
-    const result = await registerUser(formData.nama, formData.nik, formData.email, formData.password);
+    const result = await registerUser({
+      nama_lengkap: formData.nama,
+      nik: formData.nik,
+      email: formData.email,
+      password: formData.password,
+      alamat_domisili: formData.alamat_domisili,
+      id_kecamatan: formData.id_kecamatan
+    });
     setLoading(false);
 
     if (result.success) {
@@ -51,22 +72,15 @@ function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col justify-between p-5 pb-10 relative">
-      <Link to="/login" className="fixed top-5 right-5 p-2 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition z-10" title="Back to Login">
-        <ArrowLeft className="w-5 h-5" />
-      </Link>
 
       <div>
-        <div className="flex items-center justify-between mt-4 mb-8">
-          <Link to="/login" className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
+        <div className="flex items-center justify-center mt-4 mb-8">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
               L
             </div>
             <span className="font-bold text-slate-900">LaporFasum</span>
           </div>
-          <div className="w-9" />
         </div>
 
         <div className="text-center mb-8">
@@ -136,34 +150,78 @@ function RegisterPage() {
                 value={formData.email}
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
               />
-            </div>
-          </div>
+           </div>
+           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
-              Password
-            </label>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                <Lock className="w-4.5 h-4.5" />
-              </span>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                required
-                placeholder="Minimal 8 karakter"
-                className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"
-                value={formData.password}
-                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
-              </button>
-            </div>
-          </div>
+           <div>
+             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
+               Kecamatan
+             </label>
+             <div className="relative">
+               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                 <MapPin className="w-4.5 h-4.5" />
+               </span>
+               <select
+                 required
+                 disabled={loadingKecamatan}
+                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50"
+                 value={formData.id_kecamatan}
+                 onChange={(e) => setFormData(prev => ({ ...prev, id_kecamatan: e.target.value }))}
+               >
+                 <option value="">Pilih Kecamatan</option>
+                 {kecamatanList.map((kecamatan) => (
+                   <option key={kecamatan.id_kecamatan} value={kecamatan.id_kecamatan}>
+                     {kecamatan.nama_kecamatan}
+                   </option>
+                 ))}
+               </select>
+             </div>
+           </div>
+
+           <div>
+             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
+               Alamat Domisili
+             </label>
+             <div className="relative">
+               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                 <Home className="w-4.5 h-4.5" />
+               </span>
+               <input
+                 type="text"
+                 required
+                 placeholder="Masukkan alamat domisili"
+                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"
+                 value={formData.alamat_domisili}
+                 onChange={(e) => setFormData(prev => ({ ...prev, alamat_domisili: e.target.value }))}
+               />
+             </div>
+           </div>
+
+           <div>
+             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">
+               Password
+             </label>
+             <div className="relative">
+               <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+                 <Lock className="w-4.5 h-4.5" />
+               </span>
+               <input
+                 type={showPassword ? 'text' : 'password'}
+                 required
+                 placeholder="Minimal 8 karakter"
+                 className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"
+                 value={formData.password}
+                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+               />
+               <button
+                 type="button"
+                 onClick={() => setShowPassword(!showPassword)}
+                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+               >
+                 {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+               </button>
+             </div>
+           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wide mb-1.5">

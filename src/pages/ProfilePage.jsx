@@ -13,6 +13,9 @@ import { getUserProfile, logoutUser } from '../services/userApi';
 import { INITIAL_REPORTS } from '../utils/mockData';
 import toast from 'react-hot-toast';
 
+// !Mock data for user profile, replace with actual API call in production
+import { MOCK_USER_PROFILE } from '../utils/mockData';
+
 import { logout } from '../services/authApi';
 
 function ProfilePage() {
@@ -73,10 +76,6 @@ function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28">
-      <header className="bg-white px-5 pt-8 pb-6 border-b border-slate-100">
-        <h1 className="text-2xl font-bold text-slate-900">Profil Saya</h1>
-        <p className="text-sm text-slate-500 mt-1">Kelola data dan pengaturan akun Anda</p>
-      </header>
 
       {profile && (
         <>
@@ -85,7 +84,8 @@ function ProfilePage() {
               <div className="flex gap-4 mb-4 pb-4 border-b border-slate-100">
                 <div className="relative">
                   <img
-                    src={profile.avatar}
+                  // !Mock data for avatar, replace with actual API call in production
+                    src={profile.avatar ? profile.avatar : MOCK_USER_PROFILE.avatar}
                     alt={profile.nama}
                     className="w-20 h-20 rounded-full object-cover border-4 border-slate-50 shadow-md"
                   />
@@ -106,7 +106,7 @@ function ProfilePage() {
                   </div>
                   <p className="text-xs text-slate-500 mb-3">Akun Terverifikasi</p>
                   <div className="space-y-1">
-                    <p className="text-xs text-slate-600"><span className="font-medium">NIK:</span> {profile.nik}</p>
+                    <p className="text-xs text-slate-600"><span className="font-semibold"></span> {profile.nama_lengkap}</p>
                     <p className="text-xs text-slate-600"><span className="font-medium">Email:</span> {profile.email}</p>
                   </div>
                 </div>
@@ -118,7 +118,7 @@ function ProfilePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  {profile.lokasi}
+                  {profile.alamat_domisili}
                 </p>
               </div>
             </div>

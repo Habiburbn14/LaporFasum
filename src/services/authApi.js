@@ -28,17 +28,20 @@ export const loginUser = async (email, password) => {
   }
 };
 
-export const registerUser = async (nama, nik, email, password) => {
+export const registerUser = async (data) => {
   try {
     const payload = {
-      nama,
-      nik,
-      email,
-      password
+      nama_lengkap: data.nama_lengkap,
+      nik: data.nik,
+      email: data.email,
+      password: data.password,
+      alamat_domisili: data.alamat_domisili,
+      id_kecamatan: data.id_kecamatan,
+      id_kabupaten: 1
     };
 
     const response = await axios.post(
-      `${baseUrl}/auth/register`,
+      `${baseUrl}/auth/register/user`,
       payload,
       {
         headers: {
@@ -54,6 +57,16 @@ export const registerUser = async (nama, nik, email, password) => {
     return { success: true, token: null };
   } catch (error) {
     return { success: false, error: error.response?.data?.detail || 'Pendaftaran gagal' };
+  }
+};
+
+export const getKecamatan = async () => {
+  try {
+    const response = await axios.get(`${baseUrl}/auth/kecamatan`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching kecamatan:', error);
+    return [];
   }
 };
 

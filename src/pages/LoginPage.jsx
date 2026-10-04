@@ -39,7 +39,6 @@ function LoginPage() {
             </div>
             <span className="font-bold text-slate-900">LaporFasum</span>
           </div>
-          <div className="w-9" />
         </div>
 
         <div className="text-center mb-8">
