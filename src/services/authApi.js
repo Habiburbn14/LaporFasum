@@ -7,7 +7,7 @@ export const loginUser = async (nik, email, password, isAdmin = false) => {
     formData.append('password', password);
 
     const response = await axios.post(
-      'http://localhost:8000/auth/login',
+      'https://98rp1d00-8000.asse.devtunnels.ms/auth/login',
       formData,
       {
         headers: {

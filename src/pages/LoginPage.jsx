@@ -32,10 +32,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col justify-between p-5 pb-10">
       <div>
-        <div className="flex items-center justify-between mt-4 mb-8">
-          <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
+        <div className="flex items-center justify-center mt-4 mb-8">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
               L
