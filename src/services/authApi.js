@@ -1,13 +1,15 @@
 import axios from 'axios';
 
-export const loginUser = async (nik, email, password, isAdmin = false) => {
+const baseUrl = import.meta.env.VITE_BASE_URL;
+
+export const loginUser = async (email, password) => {
   try {
     const formData = new URLSearchParams();
     formData.append('email', email);
     formData.append('password', password);
 
     const response = await axios.post(
-      'https://98rp1d00-8000.asse.devtunnels.ms/auth/login',
+      `${baseUrl}/auth/login`,
       formData,
       {
         headers: {
@@ -36,7 +38,7 @@ export const registerUser = async (nama, nik, email, password) => {
     };
 
     const response = await axios.post(
-      'http://localhost:8000/auth/register',
+      `${baseUrl}/auth/register`,
       payload,
       {
         headers: {

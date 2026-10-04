@@ -18,7 +18,7 @@ function LoginPage() {
     }
 
     setLoading(true);
-    const result = await loginUser(formData.identifier, formData.identifier, formData.password, false);
+    const result = await loginUser(formData.identifier, formData.password);
     setLoading(false);
 
     if (result.success) {
@@ -57,7 +57,7 @@ function LoginPage() {
                 <User className="w-4.5 h-4.5" />
               </span>
               <input
-                type="text"
+                type="email"
                 required
                 placeholder="3524... atau email@domain.com"
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"
