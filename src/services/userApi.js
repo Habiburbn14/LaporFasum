@@ -6,17 +6,6 @@ const getAuthHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('access_token')}`
 });
 
-export const getUserProfile = async () => {
-  try {
-    const response = await axios.get(`${baseUrl}/auth/me`, {
-      headers: getAuthHeaders()
-    });
-    return { success: true, data: response.data };
-  } catch (error) {
-    return { success: false, error: error.response?.data?.detail || 'Gagal mengambil data profil' };
-  }
-};
-
 export const updateUserProfile = async (updates) => {
   try {
     const response = await axios.put(`${baseUrl}/auth/me`, updates, {
@@ -70,5 +59,6 @@ export const submitFeedback = async (feedbackData) => {
 
 export const logoutUser = async () => {
   localStorage.removeItem('access_token');
+  localStorage.removeItem('user_data');
   return { success: true };
 };

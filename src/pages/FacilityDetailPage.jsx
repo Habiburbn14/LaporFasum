@@ -68,28 +68,19 @@ function FacilityDetailPage() {
         </div>
       </header>
 
-      <div className="px-5 -mt-8">
+      {/* <div className="px-5 -mt-8">
         <img
           src={facility.thumbnail}
           alt={facility.nama}
           className="w-full h-48 object-cover rounded-2xl shadow-lg"
         />
-      </div>
+      </div> */}
 
       <div className="px-5 mt-6">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <h2 className="font-bold text-slate-900 text-lg mb-3">Deskripsi</h2>
           <p className="text-slate-600 text-sm leading-relaxed">
             {facility.deskripsi}
-          </p>
-        </div>
-      </div>
-
-      <div className="px-5 mt-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-          <h2 className="font-bold text-slate-900 text-lg mb-3">Sejarah</h2>
-          <p className="text-slate-600 text-sm leading-relaxed">
-            {facility.sejarah}
           </p>
         </div>
       </div>
@@ -147,6 +138,16 @@ function FacilityDetailPage() {
               );
             })}
           </div>
+          
+        </div>
+      </div>
+
+      <div className="px-5 mt-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <h2 className="font-bold text-slate-900 text-lg mb-3">Sejarah</h2>
+          <p className="text-slate-600 text-sm leading-relaxed">
+            {facility.sejarah}
+          </p>
         </div>
       </div>
 

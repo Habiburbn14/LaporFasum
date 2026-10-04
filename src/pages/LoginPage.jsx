@@ -3,9 +3,11 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { loginUser } from '../services/authApi';
 import toast from 'react-hot-toast';
+import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
   const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -23,7 +25,9 @@ function LoginPage() {
 
     if (result.success) {
       toast.success('Login Berhasil');
-      navigate('/');
+      // Trigger fetch user di context atau set data langsung jika loginUser mengembalikan data user
+      // Karena loginUser sudah simpan token, kita bisa memanggil /me atau reload
+      window.location.href = '/';
     } else {
       toast.error(result.error || 'Login gagal');
     }

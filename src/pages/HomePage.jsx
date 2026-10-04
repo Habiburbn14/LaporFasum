@@ -2,20 +2,31 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   Bell, MapPin, FileStack, Clock3, CheckCircle2,
-  Building2, GraduationCap, Route as RouteIcon, Lightbulb, Waves, Trees,
+  Route as RouteIcon, Lightbulb, Waves, Trash2, Trees, Building2, GraduationCap,
+  Signpost, Bus, Trophy, ShoppingBag, Landmark, ShieldCheck, Store,
   ChevronRight,
 } from 'lucide-react';
 import BottomNav from '../components/mobile/BottomNav';
 import WeeklyChart from '../components/mobile/WeeklyChart';
-import { MOCK_HOME_STATS, MOCK_WEEKLY_CHART, MOCK_MONTHLY_CHART, MOCK_FACILITY_CATEGORIES, DETAILED_FACILITY_DATA, INITIAL_REPORTS } from '../utils/mockData';
+import { MOCK_HOME_STATS, MOCK_WEEKLY_CHART, MOCK_MONTHLY_CHART, DETAILED_FACILITY_DATA, INITIAL_REPORTS } from '../utils/mockData';
+import { KATEGORI_FASILITAS_ARRAY } from '../utils/kategoriFasilitas';
 
 const CATEGORY_ICONS = {
-  puskesmas: Building2,
-  sekolah: GraduationCap,
   jalan: RouteIcon,
   pju: Lightbulb,
   drainase: Waves,
+  sampah: Trash2,
   taman: Trees,
+  kesehatan: Building2,
+  pendidikan: GraduationCap,
+  rambu: Signpost,
+  transportasi: Bus,
+  olahraga: Trophy,
+  pasar: ShoppingBag,
+  ibadah: Landmark,
+  pemerintah: Landmark,
+  keamanan: ShieldCheck,
+  perbelanjaan: Store,
 };
 
 const CATEGORY_COLORS = {
@@ -25,6 +36,8 @@ const CATEGORY_COLORS = {
   amber: 'bg-amber-50 text-amber-600',
   cyan: 'bg-cyan-50 text-cyan-600',
   emerald: 'bg-emerald-50 text-emerald-600',
+  red: 'bg-red-50 text-red-600',
+  pink: 'bg-pink-50 text-pink-600',
 };
 
 const STAT_ICONS = [FileStack, Clock3, CheckCircle2];
@@ -69,7 +82,7 @@ function HomePage() {
 
         <div className="relative">
           <h1 className="text-white text-xl font-bold leading-snug">
-            Selamat datang, Warga Lamongan
+            Selamat datang, 
           </h1>
           <div className="flex items-center gap-1.5 mt-2 text-blue-100 text-sm">
             <MapPin className="w-3.5 h-3.5" />
@@ -131,18 +144,18 @@ function HomePage() {
           </Link>
         </div>
         <div className="grid grid-cols-3 gap-3">
-          {MOCK_FACILITY_CATEGORIES.slice(0, 6).map((cat) => {
+          {KATEGORI_FASILITAS_ARRAY.slice(0, 6).map((cat) => {
             const Icon = CATEGORY_ICONS[cat.icon];
             return (
               <Link
-                key={cat.id}
-                to={`/fasilitas/${cat.id}`}
+                key={cat.id_kategori}
+                to={`/fasilitas/${cat.id_kategori}`}
                 className="bg-white rounded-2xl shadow-sm border border-slate-100 p-3 flex flex-col items-center gap-2 hover:border-blue-200 transition-colors"
               >
                 <span className={`w-10 h-10 rounded-xl flex items-center justify-center ${CATEGORY_COLORS[cat.color]}`}>
                   <Icon className="w-5 h-5" />
                 </span>
-                <span className="text-[11px] font-medium text-slate-600 text-center leading-tight">{cat.nama}</span>
+                <span className="text-[11px] font-medium text-slate-600 text-center leading-tight">{cat.nama_kategori}</span>
               </Link>
             );
           })}

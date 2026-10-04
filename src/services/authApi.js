@@ -2,18 +2,19 @@ import axios from 'axios';
 
 const baseUrl = import.meta.env.VITE_BASE_URL;
 
-export const loginUser = async (email, password) => {
+export const loginUser = async (identifier, password) => {
   try {
-    const formData = new URLSearchParams();
-    formData.append('email', email);
-    formData.append('password', password);
+    const payload = {
+      identifier: identifier,
+      password: password
+    };
 
     const response = await axios.post(
       `${baseUrl}/auth/login`,
-      formData,
+      payload,
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/json'
         }
       }
     );
