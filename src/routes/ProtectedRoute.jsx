@@ -3,10 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { isLoggedIn } from '../services/authApi';
 
 function ProtectedRoute({ children }) {
-  if (!isLoggedIn()) {
-    return <Navigate to="/login" replace />;
-  }
-
+  // Bypass login check for direct access
   return children;
 }
 

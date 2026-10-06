@@ -9,6 +9,10 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardAdminMaster from './pages/DashboardAdminMaster';
+import TriageReportsPage from './pages/TriageReportsPage';
+import GISMapViewPage from './pages/GISMapViewPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import SettingsPage from './pages/SettingsPage';
 import FacilityCategoriesPage from './pages/FacilityCategoriesPage';
 import FacilityDetailPage from './pages/FacilityDetailPage';
 import ProtectedRoute from './routes/ProtectedRoute';
@@ -74,6 +78,26 @@ function App() {
         <Route path="/admin/master" element={
           <ProtectedRoute>
             <DashboardAdminMaster />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/triage" element={
+          <ProtectedRoute>
+            <TriageReportsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/gis" element={
+          <ProtectedRoute>
+            <GISMapViewPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/analytics" element={
+          <ProtectedRoute>
+            <AnalyticsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings" element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         } />
         <Route path="/fasilitas" element={
