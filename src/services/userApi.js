@@ -1,58 +1,64 @@
-import { MOCK_USER_PROFILE } from '../utils/mockData';
+import axios from 'axios';
 
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const baseUrl = import.meta.env.VITE_BASE_URL;
 
-export const getUserProfile = async () => {
-  await delay(800);
-  return { success: true, data: MOCK_USER_PROFILE };
-};
+const getAuthHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('access_token')}`
+});
 
 export const updateUserProfile = async (updates) => {
-  await delay(1000);
   try {
-    const updated = { ...MOCK_USER_PROFILE, ...updates };
-    Object.assign(MOCK_USER_PROFILE, updated);
-    return { success: true, data: updated };
+    const response = await axios.put(`${baseUrl}/auth/me`, updates, {
+      headers: getAuthHeaders()
+    });
+    return { success: true, data: response.data };
   } catch (error) {
-    return { success: false, error: 'Gagal memperbarui profil' };
+    return { success: false, error: error.response?.data?.detail || 'Gagal memperbarui profil' };
   }
 };
 
 export const uploadAvatar = async (file) => {
-  await delay(1500);
   try {
-    const seed = file || `avatar-${Date.now()}`;
-    const newAvatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
-    MOCK_USER_PROFILE.avatar = newAvatarUrl;
-    return { success: true, url: newAvatarUrl };
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await axios.post(`${baseUrl}/auth/me/avatar`, formData, {
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return { success: true, url: response.data.avatar_url };
   } catch (error) {
-    return { success: false, error: 'Gagal mengunggah foto' };
+    return { success: false, error: error.response?.data?.detail || 'Gagal mengunggah foto' };
   }
 };
 
 export const changePassword = async (oldPassword, newPassword) => {
-  await delay(1000);
-  if (oldPassword !== 'password123') {
-    return { success: false, error: 'Password lama tidak sesuai' };
+  try {
+    const response = await axios.post(
+      `${baseUrl}/auth/me/change-password`,
+      { old_password: oldPassword, new_password: newPassword },
+      { headers: getAuthHeaders() }
+    );
+    return { success: true, message: response.data.message || 'Password berhasil diubah' };
+  } catch (error) {
+    return { success: false, error: error.response?.data?.detail || 'Gagal mengubah password' };
   }
-  if (newPassword.length < 8) {
-    return { success: false, error: 'Password minimal 8 karakter' };
-  }
-  return { success: true, message: 'Password berhasil diubah' };
 };
 
 export const submitFeedback = async (feedbackData) => {
-  await delay(1200);
   try {
-    return { success: true, message: 'Feedback berhasil dikirim' };
+    const response = await axios.post(`${baseUrl}/feedback`, feedbackData, {
+      headers: getAuthHeaders()
+    });
+    return { success: true, message: response.data?.message || 'Feedback berhasil dikirim' };
   } catch (error) {
-    return { success: false, error: 'Gagal mengirim feedback' };
+    return { success: false, error: error.response?.data?.detail || 'Gagal mengirim feedback' };
   }
 };
 
 export const logoutUser = async () => {
-  await delay(500);
-  localStorage.removeItem('user');
-  localStorage.removeItem('token');
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('user_data');
   return { success: true };
 };

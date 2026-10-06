@@ -100,21 +100,6 @@ export const MOCK_MONTHLY_CHART = [
   { label: "Minggu 4", value: 78 },
 ];
 
-export const MOCK_FACILITY_CATEGORIES = [
-  { id: 1, nama: "Jalan dan Jembatan", icon: "jalan", color: "orange" },
-  { id: 2, nama: "Penerangan Jalan Umum (PJU)", icon: "pju", color: "amber" },
-  { id: 3, nama: "Saluran Air dan Drainase", icon: "drainase", color: "cyan" },
-  { id: 4, nama: "Pengelolaan Sampah dan Kebersihan", icon: "taman", color: "emerald" },
-  { id: 5, nama: "Taman dan Ruang Terbuka Hijau (RTH)", icon: "taman", color: "emerald" },
-  { id: 6, nama: "Fasilitas Kesehatan", icon: "puskesmas", color: "blue" },
-  { id: 7, nama: "Fasilitas Pendidikan", icon: "sekolah", color: "violet" },
-  { id: 8, nama: "Rambu dan Marka Jalan", icon: "jalan", color: "orange" },
-  { id: 9, nama: "Transportasi Publik (Halte, Terminal)", icon: "pju", color: "amber" },
-  { id: 10, nama: "Fasilitas Olahraga dan Rekreasi", icon: "taman", color: "emerald" },
-  { id: 11, nama: "Pasar Tradisional", icon: "puskesmas", color: "blue" },
-  { id: 12, nama: "Tempat Ibadah", icon: "sekolah", color: "violet" },
-];
-
 export const DETAILED_FACILITY_DATA = {
   1: {
     id: 1,
@@ -302,6 +287,51 @@ export const DETAILED_FACILITY_DATA = {
       { id: 2, nama: "Gereja Kristen Lamongan", lokasi: "Jl. Ahmad Yani", kecamatan: "Lamongan", latitude: -6.8950, longitude: 112.2170, kondisi: "Baik" },
       { id: 3, nama: "Masjid Nurul Hidayah", lokasi: "Jl. Pendidikan", kecamatan: "Sambirejo", latitude: -6.9126, longitude: 112.2843, kondisi: "Baik" },
       { id: 4, nama: "Vihara Gatama Bodhi", lokasi: "Jl. Merdeka", kecamatan: "Mantup", latitude: -6.9876, longitude: 112.3143, kondisi: "Baik" },
+    ]
+  },
+  13: {
+    id: 13,
+    nama: "Fasilitas Pemerintahan dan Layanan Publik",
+    deskripsi: "Fasilitas pemerintahan dan layanan publik adalah institusi yang menyelenggarakan fungsi administrasi pemerintahan dan melayani kebutuhan publik di Kabupaten Lamongan.",
+    sejarah: "Infrastruktur pemerintahan di Lamongan telah berkembang sejak era kemerdekaan dengan pembangunan kantor-kantor pemerintah dan kantor pelayanan publik di berbagai kecamatan.",
+    kondisi: "Baik",
+    jumlahUnit: "8 kantor kecamatan, 15 kantor dinas, dan 42 kantor pelayanan publik",
+    thumbnail: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=600",
+    color: "blue",
+    fasilitas: [
+      { id: 1, nama: "Kantor Bupati Lamongan", lokasi: "Jl. Jend. Sudirman", kecamatan: "Lamongan", latitude: -6.8938, longitude: 112.2140, kondisi: "Baik" },
+      { id: 2, nama: "Kantor Kecamatan Lamongan", lokasi: "Jl. Raya Lamongan", kecamatan: "Lamongan", latitude: -6.8950, longitude: 112.2170, kondisi: "Baik" },
+      { id: 3, nama: "Kantor Camat Sambirejo", lokasi: "Jl. Pendidikan", kecamatan: "Sambirejo", latitude: -6.9126, longitude: 112.2843, kondisi: "Baik" },
+    ]
+  },
+  14: {
+    id: 14,
+    nama: "Fasilitas Keamanan dan Keselamatan (Polisi, Damkar)",
+    deskripsi: "Fasilitas keamanan dan keselamatan adalah institusi yang bertugas menjaga keamanan, ketertiban, dan menangani keadaan darurat di Kabupaten Lamongan.",
+    sejarah: "Fasilitas keamanan di Lamongan telah berkembang sejak era kemerdekaan dengan pembangunan kantor polisi dan pos pemadam kebakaran di berbagai lokasi strategis.",
+    kondisi: "Baik",
+    jumlahUnit: "8 kantor polisi, 5 pos damkar, dan 12 kantor pos keamanan",
+    thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f70259b51?auto=format&fit=crop&q=80&w=600",
+    color: "red",
+    fasilitas: [
+      { id: 1, nama: "Kantor Polres Lamongan", lokasi: "Jl. Raya Lamongan", kecamatan: "Lamongan", latitude: -6.8938, longitude: 112.2140, kondisi: "Baik" },
+      { id: 2, nama: "Pos Pemadam Kebakaran Lamongan", lokasi: "Jl. Ahmad Yani", kecamatan: "Lamongan", latitude: -6.8950, longitude: 112.2170, kondisi: "Baik" },
+      { id: 3, nama: "Kantor Polsek Sambirejo", lokasi: "Jl. Pendidikan", kecamatan: "Sambirejo", latitude: -6.9126, longitude: 112.2843, kondisi: "Baik" },
+    ]
+  },
+  15: {
+    id: 15,
+    nama: "Pusat Perbelanjaan dan Fasilitas Ekonomi Modern",
+    deskripsi: "Pusat perbelanjaan dan fasilitas ekonomi modern adalah tempat perdagangan modern yang melayani kebutuhan konsumsi dan aktivitas ekonomi masyarakat Kabupaten Lamongan.",
+    sejarah: "Pusat perbelanjaan modern di Lamongan berkembang sejak 2000-an sebagai respons terhadap pertumbuhan ekonomi dan perubahan pola konsumsi masyarakat.",
+    kondisi: "Baik",
+    jumlahUnit: "3 mall, 8 supermarket, dan 12 pasar modern",
+    thumbnail: "https://images.unsplash.com/photo-1555636222-cae831e670b3?auto=format&fit=crop&q=80&w=600",
+    color: "blue",
+    fasilitas: [
+      { id: 1, nama: "Lamongan Plaza", lokasi: "Jl. Raya Lamongan", kecamatan: "Lamongan", latitude: -6.8938, longitude: 112.2140, kondisi: "Baik" },
+      { id: 2, nama: "Supermarket Maju Jaya", lokasi: "Jl. Ahmad Yani", kecamatan: "Lamongan", latitude: -6.8950, longitude: 112.2170, kondisi: "Baik" },
+      { id: 3, nama: "Pasar Modern Sambirejo", lokasi: "Jl. Pendidikan", kecamatan: "Sambirejo", latitude: -6.9126, longitude: 112.2843, kondisi: "Baik" },
     ]
   }
 };
