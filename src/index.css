@@ -19,3 +19,8 @@
     @apply bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200;
   }
 }
+
+/* Fix Leaflet marker bug */
+.leaflet-container img {
+  max-width: none !important;
+}

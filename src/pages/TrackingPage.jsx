@@ -309,7 +309,6 @@ function TrackingPage() {
                     </label>
                   </div>
                 </div>
-                </div>
 
                 {/* Filter Laporan */}
                 <div>

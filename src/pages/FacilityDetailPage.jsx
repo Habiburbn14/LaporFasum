@@ -30,7 +30,7 @@ function FacilityDetailPage() {
   
   if (!facility) {
     return (
-      <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto flex flex-col items-center justify-center px-5">
+      <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col items-center justify-center px-5">
         <h2 className="text-xl font-bold text-slate-800">Fasilitas tidak ditemukan</h2>
         <Link to="/fasilitas" className="mt-4 text-blue-600 hover:text-blue-800">
           Kembali ke daftar fasilitas
@@ -46,8 +46,8 @@ function FacilityDetailPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto pb-28">
-      <header className={`bg-linear-to-br ${CATEGORY_BG[facility.color || 'blue']} px-5 pt-6 pb-8 rounded-b-3xl relative overflow-hidden`}>
+    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28">
+      <header className={`bg-gradient-to-br ${CATEGORY_BG[facility.color || 'blue']} px-5 pt-6 pb-8 rounded-b-3xl relative overflow-hidden`}>
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
         <div className="absolute bottom-0 left-10 w-24 h-24 bg-white/5 rounded-full" />
 
@@ -68,19 +68,28 @@ function FacilityDetailPage() {
         </div>
       </header>
 
-      {/* <div className="px-5 -mt-8">
+      <div className="px-5 -mt-8">
         <img
           src={facility.thumbnail}
           alt={facility.nama}
           className="w-full h-48 object-cover rounded-2xl shadow-lg"
         />
-      </div> */}
+      </div>
 
       <div className="px-5 mt-6">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <h2 className="font-bold text-slate-900 text-lg mb-3">Deskripsi</h2>
           <p className="text-slate-600 text-sm leading-relaxed">
             {facility.deskripsi}
+          </p>
+        </div>
+      </div>
+
+      <div className="px-5 mt-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+          <h2 className="font-bold text-slate-900 text-lg mb-3">Sejarah</h2>
+          <p className="text-slate-600 text-sm leading-relaxed">
+            {facility.sejarah}
           </p>
         </div>
       </div>
@@ -138,16 +147,6 @@ function FacilityDetailPage() {
               );
             })}
           </div>
-          
-        </div>
-      </div>
-
-      <div className="px-5 mt-6">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-          <h2 className="font-bold text-slate-900 text-lg mb-3">Sejarah</h2>
-          <p className="text-slate-600 text-sm leading-relaxed">
-            {facility.sejarah}
-          </p>
         </div>
       </div>
 
@@ -155,7 +154,7 @@ function FacilityDetailPage() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
           <h2 className="font-bold text-slate-900 text-lg mb-3">Peta Lokasi</h2>
           <div className="bg-slate-100 rounded-xl h-48 flex items-center justify-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-br from-blue-500/10 to-violet-500/10" />
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-violet-500/10" />
             <div className="text-center z-10">
               <MapPin className="w-12 h-12 text-blue-600 mx-auto mb-3" />
               <p className="text-slate-600 text-sm">

@@ -9,12 +9,12 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardAdminMaster from './pages/DashboardAdminMaster';
+import FacilityCategoriesPage from './pages/FacilityCategoriesPage';
+import FacilityDetailPage from './pages/FacilityDetailPage';
 import TriageReportsPage from './pages/TriageReportsPage';
 import GISMapViewPage from './pages/GISMapViewPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
-import FacilityCategoriesPage from './pages/FacilityCategoriesPage';
-import FacilityDetailPage from './pages/FacilityDetailPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
 
@@ -84,6 +84,21 @@ function App() {
             <DashboardAdminMaster />
           </ProtectedRoute>
         } />
+        <Route path="/fasilitas" element={
+          <ProtectedRoute>
+            <FacilityCategoriesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/fasilitas/:id" element={
+          <ProtectedRoute>
+            <FacilityDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/map" element={
+          <ProtectedRoute>
+            <GISMapViewPage />
+          </ProtectedRoute>
+        } />
         <Route path="/admin/triage" element={
           <ProtectedRoute>
             <TriageReportsPage />
@@ -102,16 +117,6 @@ function App() {
         <Route path="/admin/settings" element={
           <ProtectedRoute>
             <SettingsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/fasilitas" element={
-          <ProtectedRoute>
-            <FacilityCategoriesPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/fasilitas/:id" element={
-          <ProtectedRoute>
-            <FacilityDetailPage />
           </ProtectedRoute>
         } />
       </Routes>

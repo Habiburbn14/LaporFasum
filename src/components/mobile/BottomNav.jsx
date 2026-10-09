@@ -38,7 +38,7 @@ function BottomNav() {
         className="hidden"
         onChange={handleFileChange}
       />
-      <div className="bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(15,23,42,0.06)] px-2 pt-6 pb-[calc(0.5rem+env(safe-area-inset-bottom))] relative">
+      <div className="bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(15,23,42,0.06)] px-2 pt-3 pb-[calc(0.4rem+env(safe-area-inset-bottom))] relative">
         <div className="flex items-end justify-between">
           {navItems.map(({ to, icon: Icon, label, isCenter }) => {
             const active = pathname === to;
@@ -50,8 +50,8 @@ function BottomNav() {
                     onClick={handleCameraClick}
                     className="flex flex-col items-center"
                   >
-                    <span className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-xl shadow-blue-600/50 ring-4 ring-white -mt-12 transition-transform active:scale-95">
-                      <Icon className="w-6 h-6 text-white" />
+                    <span className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-xl shadow-blue-600/50 ring-4 ring-white -mt-10 transition-transform active:scale-95">
+                      <Icon className="w-5 h-5 text-white" />
                     </span>
                   </button>
                 </div>

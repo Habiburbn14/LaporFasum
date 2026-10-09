@@ -3,11 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { loginUser } from '../services/authApi';
 import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
   const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -20,29 +18,31 @@ function LoginPage() {
     }
 
     setLoading(true);
-    const result = await loginUser(formData.identifier, formData.password);
+    const result = await loginUser(formData.identifier, formData.identifier, formData.password, false);
     setLoading(false);
 
     if (result.success) {
       toast.success('Login Berhasil');
-      // Trigger fetch user di context atau set data langsung jika loginUser mengembalikan data user
-      // Karena loginUser sudah simpan token, kita bisa memanggil /me atau reload
-      window.location.href = '/';
+      navigate('/', { replace: true });
     } else {
       toast.error(result.error || 'Login gagal');
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto flex flex-col justify-between p-5 pb-10">
+    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col justify-between p-5 pb-10">
       <div>
-        <div className="flex items-center justify-center mt-4 mb-8">
+        <div className="flex items-center justify-between mt-4 mb-8">
+          <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
               L
             </div>
             <span className="font-bold text-slate-900">LaporFasum</span>
           </div>
+          <div className="w-9" />
         </div>
 
         <div className="text-center mb-8">
@@ -60,7 +60,7 @@ function LoginPage() {
                 <User className="w-4.5 h-4.5" />
               </span>
               <input
-                type="email"
+                type="text"
                 required
                 placeholder="3524... atau email@domain.com"
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"

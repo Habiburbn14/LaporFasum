@@ -77,7 +77,6 @@ function DashboardAdminMaster() {
   const [filterStatus, setFilterStatus] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
-  const [timeRange, setTimeRange] = useState('mingguan');
 
   // Stats calculation
   const stats = {
@@ -86,9 +85,6 @@ function DashboardAdminMaster() {
     diproses: reports.filter(r => r.status === 'Diterima').length,
     selesai: reports.filter(r => r.status === 'Selesai').length,
   };
-
-  // Chart data based on time range
-  const chartData = timeRange === 'mingguan' ? MOCK_WEEKLY_CHART : MOCK_MONTHLY_CHART;
 
   // Filter reports
   const filteredReports = reports.filter(r => {
@@ -104,24 +100,12 @@ function DashboardAdminMaster() {
   };
 
   return (
-<<<<<<< HEAD
     <div className="min-h-screen bg-slate-100 flex font-sans">
       {/* Sidebar (Left) */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 z-20">
         <div className="p-6 flex items-center gap-3 border-b border-slate-800">
           <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-lg">
             L
-=======
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
-      <main className="grow max-w-7xl mx-auto w-full px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Dashboard Admin Master - Kabupaten Lamongan</h1>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-600 text-sm">Total Laporan</p>
-            <p className="text-3xl font-bold">{stats.total}</p>
->>>>>>> 4d339fbac173b27393331efa7c0c096d2d827606
           </div>
           <div>
             <h2 className="text-white font-bold text-base leading-tight">LaporFasum</h2>
@@ -129,7 +113,6 @@ function DashboardAdminMaster() {
           </div>
         </div>
 
-<<<<<<< HEAD
         <nav className="flex-1 p-4 space-y-1.5">
           <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-medium text-sm">
             <LayoutDashboard className="w-5 h-5" />
@@ -257,22 +240,12 @@ function DashboardAdminMaster() {
                   <p className="text-xs text-slate-500 mt-0.5">Statistik pengaduan infrastruktur di Kabupaten Lamongan</p>
                 </div>
                 <div className="flex bg-slate-100 rounded-full p-1">
-                  <button 
-                    onClick={() => setTimeRange('mingguan')}
-                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${timeRange === 'mingguan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    Mingguan
-                  </button>
-                  <button 
-                    onClick={() => setTimeRange('bulanan')}
-                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${timeRange === 'bulanan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    Bulanan
-                  </button>
+                  <button className="text-xs font-medium px-3 py-1 rounded-full bg-white text-blue-600 shadow-sm">Mingguan</button>
+                  <button className="text-xs font-medium px-3 py-1 rounded-full text-slate-500">Bulanan</button>
                 </div>
               </div>
               <div className="h-64 flex items-center justify-center">
-                <WeeklyChart data={chartData} width={600} height={200} />
+                <WeeklyChart data={MOCK_WEEKLY_CHART} width={600} height={200} />
               </div>
             </div>
 
@@ -434,29 +407,6 @@ function DashboardAdminMaster() {
               <button 
                 onClick={() => setSelectedReport(null)}
                 className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
-=======
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="grow">
-              <label className="block text-sm font-medium mb-2">Filter Status</label>
-              <select 
-                value={filterStatus} 
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full border rounded-lg p-2"
-              >
-                <option value="">Semua Status</option>
-                <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
-                <option value="Diterima">Diterima</option>
-                <option value="Selesai">Selesai</option>
-              </select>
-            </div>
-            <div className="grow">
-              <label className="block text-sm font-medium mb-2">Filter Kecamatan</label>
-              <select 
-                value={filterKecamatan} 
-                onChange={(e) => setFilterKecamatan(e.target.value)}
-                className="w-full border rounded-lg p-2"
->>>>>>> 4d339fbac173b27393331efa7c0c096d2d827606
               >
                 ✕
               </button>

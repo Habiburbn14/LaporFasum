@@ -1,48 +1,53 @@
 import axios from 'axios';
 
-const baseUrl = import.meta.env.VITE_BASE_URL;
-
-export const loginUser = async (identifier, password) => {
-  try {
-    const payload = {
-      identifier: identifier,
-      password: password
-    };
-
-    const response = await axios.post(
-      `${baseUrl}/auth/login`,
-      payload,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (response.data.access_token) {
-      localStorage.setItem('access_token', response.data.access_token);
-      return { success: true, token: response.data.access_token };
-    }
-    return { success: false, error: 'Login gagal' };
-  } catch (error) {
-    return { success: false, error: error.response?.data?.detail || 'Login gagal' };
+export const loginUser = async (nik, email, password, isAdmin = false) => {
+  // Mock authentication for development
+  console.log('Login attempt:', { email, isAdmin });
+  
+  // For development, accept any non-empty password
+  if (!email || !password) {
+    return { success: false, error: 'Email dan password harus diisi' };
   }
+  
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Create mock token
+  const mockToken = 'mock-token-' + Date.now();
+  
+  // Determine user role
+  let role = 'user';
+  if (email.includes('admin') || isAdmin) {
+    role = 'admin';
+  }
+  
+  // Store in localStorage
+  localStorage.setItem('access_token', mockToken);
+  localStorage.setItem('user_email', email);
+  localStorage.setItem('user_role', role);
+  
+  return { 
+    success: true, 
+    token: mockToken,
+    user: {
+      email,
+      role,
+      name: email.includes('admin') ? 'Admin Kabupaten' : 'Warga Lamongan'
+    }
+  };
 };
 
-export const registerUser = async (data) => {
+export const registerUser = async (nama, nik, email, password) => {
   try {
     const payload = {
-      nama_lengkap: data.nama_lengkap,
-      nik: data.nik,
-      email: data.email,
-      password: data.password,
-      alamat_domisili: data.alamat_domisili,
-      id_kecamatan: data.id_kecamatan,
-      id_kabupaten: 1
+      nama,
+      nik,
+      email,
+      password
     };
 
     const response = await axios.post(
-      `${baseUrl}/auth/register/user`,
+      'http://localhost:8000/auth/register',
       payload,
       {
         headers: {
@@ -58,16 +63,6 @@ export const registerUser = async (data) => {
     return { success: true, token: null };
   } catch (error) {
     return { success: false, error: error.response?.data?.detail || 'Pendaftaran gagal' };
-  }
-};
-
-export const getKecamatan = async () => {
-  try {
-    const response = await axios.get(`${baseUrl}/auth/kecamatan`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching kecamatan:', error);
-    return [];
   }
 };
 

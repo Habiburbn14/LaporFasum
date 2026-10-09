@@ -4,7 +4,7 @@ import { isLoggedIn } from '../services/authApi';
 
 function PublicRoute({ children }) {
   if (isLoggedIn()) {
-    return <Navigate to="/profile" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return children;
