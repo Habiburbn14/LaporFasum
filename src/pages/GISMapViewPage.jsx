@@ -1,64 +1,99 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut,
   Bell, Layers, X, ChevronDown
 } from 'lucide-react';
-import { MapContainer, TileLayer, ZoomControl } from 'react-leaflet';
-import { INITIAL_REPORTS } from '../utils/mockData';
+import { MapContainer, TileLayer, ZoomControl, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { GeoJSONLayer, GEOJSON_LAYERS } from '../components/GeoJSONLayer';
 import BottomNav from '../components/mobile/BottomNav';
+import LoadingScreen from '../components/ui/LoadingScreen';
+import ErrorState from '../components/ui/ErrorState';
+import { getErrorMessage } from '../utils/error';
 
 function GISMapViewPage() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith('/admin');
-  const [reports] = useState([...INITIAL_REPORTS, ...INITIAL_REPORTS.slice(0, 4)]);
   const [viewMode, setViewMode] = useState('default');
-  const [visibleLayers, setVisibleLayers] = useState(
-    Object.keys(GEOJSON_LAYERS).reduce((acc, key) => ({ ...acc, [key]: true }), {})
-  );
   const [showLayerControl, setShowLayerControl] = useState(false);
+  const [lamonganData, setLamonganData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const center = [-6.8938, 112.2140];
+  // Map center for Lamongan
+  const center = [-7.169249504786527, 112.33849173392773];
   const zoom = 11;
 
-  const toggleLayer = (key) => {
-    setVisibleLayers(prev => ({ ...prev, [key]: !prev[key] }));
+  // Boundary style - red outline, transparent fill
+  const boundaryStyle = {
+    color: '#ef4444',
+    weight: 3,
+    opacity: 1,
+    fillOpacity: 0,
+    lineCap: 'round',
+    lineJoin: 'round',
   };
+
+  useEffect(() => {
+    const fetchLamonganBoundary = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch('/lamongan.geojson');
+        if (!response.ok) {
+          throw new Error(`Gagal memuat file GeoJSON (HTTP ${response.status})`);
+        }
+        const data = await response.json();
+        setLamonganData(data);
+      } catch (err) {
+        console.error('Error loading Lamongan boundary:', err);
+        setError(getErrorMessage(err));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLamonganBoundary();
+  }, []);
+
+  if (loading) return <LoadingScreen message="Memuat batas wilayah Lamongan..." withNav={!isAdmin} />;
+
+  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} withNav={!isAdmin} />;
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col relative overflow-hidden pb-16">
-        {/* Map Container */}
-        <div className="absolute inset-0 pb-16">
+      <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col relative overflow-hidden">
+        <div className="absolute inset-0">
           <MapContainer 
             center={center} 
             zoom={zoom} 
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
+            attributionControl={false}
           >
             {viewMode === 'satellite' ? (
               <TileLayer
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                attribution="Tiles &copy; Esri"
+                attribution=""
               />
             ) : (
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; OpenStreetMap'
+                attribution=""
               />
             )}
             
-            {Object.keys(GEOJSON_LAYERS).map(key => (
-              <GeoJSONLayer key={key} layerKey={key} isVisible={visibleLayers[key]} />
-            ))}
+            {lamonganData && (
+              <GeoJSON
+                data={lamonganData}
+                style={boundaryStyle}
+              />
+            )}
             
             <ZoomControl position="topleft" />
           </MapContainer>
 
-          {/* Layer Control Button - Top Right */}
           <button
             onClick={() => setShowLayerControl(!showLayerControl)}
             className="absolute top-4 right-4 z-[1000] bg-white rounded-xl shadow-md px-3 py-2 flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors border border-slate-100"
@@ -68,11 +103,10 @@ function GISMapViewPage() {
             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showLayerControl ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Layer Control Panel - Popup */}
           {showLayerControl && (
             <div className="absolute top-14 right-4 z-[1000] bg-white rounded-xl shadow-lg border border-slate-200 w-56 max-h-[50vh] overflow-y-auto">
               <div className="p-2 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                <h3 className="font-bold text-slate-900 text-[11px]">Layer & Jalan</h3>
+                <h3 className="font-bold text-slate-900 text-[11px]">Layer Dasar</h3>
                 <button
                   onClick={() => setShowLayerControl(false)}
                   className="w-4 h-4 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500"
@@ -109,26 +143,24 @@ function GISMapViewPage() {
                 </div>
 
                 <div className="border-t border-slate-100 pt-2">
-                  <p className="font-bold text-slate-600 mb-1 text-[10px]">Jalan</p>
+                  <p className="font-bold text-slate-600 mb-1 text-[10px]">Batas Wilayah</p>
                   <div className="space-y-0.5">
-                    {Object.entries(GEOJSON_LAYERS).map(([key, layer]) => (
-                      <label
-                        key={key}
-                        className="flex items-center gap-1.5 p-1 rounded hover:bg-slate-50 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleLayers[key]}
-                          onChange={() => toggleLayer(key)}
-                          className="w-3 h-3 text-blue-600 rounded"
-                        />
-                        <span 
-                          className="w-2 h-2 rounded-sm flex-shrink-0" 
-                          style={{ backgroundColor: layer.color }}
-                        />
-                        <span className="text-slate-700 flex-1 text-[9px] line-clamp-1">{layer.name}</span>
-                      </label>
-                    ))}
+                    <label className="flex items-center gap-1.5 p-1 rounded hover:bg-slate-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        onChange={() => {}}
+                        disabled
+                        className="w-3 h-3 text-blue-600 rounded"
+                      />
+                      <span 
+                        className="w-2 h-2 rounded-sm flex-shrink-0" 
+                        style={{ backgroundColor: boundaryStyle.color }}
+                      />
+                      <span className="text-slate-700 flex-1 text-[9px] line-clamp-1">
+                        Batas Kabupaten Lamongan
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>
@@ -223,27 +255,30 @@ function GISMapViewPage() {
             zoom={zoom} 
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
+            attributionControl={false}
           >
             {viewMode === 'satellite' ? (
               <TileLayer
                 url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                attribution="Tiles &copy; Esri"
+                attribution=""
               />
             ) : (
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; OpenStreetMap'
+                attribution=""
               />
             )}
             
-            {Object.keys(GEOJSON_LAYERS).map(key => (
-              <GeoJSONLayer key={key} layerKey={key} isVisible={visibleLayers[key]} />
-            ))}
+            {lamonganData && (
+              <GeoJSON
+                data={lamonganData}
+                style={boundaryStyle}
+              />
+            )}
             
             <ZoomControl position="topleft" />
           </MapContainer>
 
-          {/* Layer Control Button - Top Right */}
           <button
             onClick={() => setShowLayerControl(!showLayerControl)}
             className="absolute top-6 right-6 z-[1000] bg-white rounded-xl shadow-lg px-4 py-2.5 flex items-center gap-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
@@ -253,7 +288,6 @@ function GISMapViewPage() {
             <ChevronDown className={`w-4 h-4 transition-transform ${showLayerControl ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Layer Control Panel - Popup */}
           {showLayerControl && (
             <div className="absolute top-20 right-6 z-[1000] bg-white rounded-2xl shadow-2xl border border-slate-200 w-80 max-h-[calc(100vh-140px)] overflow-y-auto">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
@@ -294,26 +328,24 @@ function GISMapViewPage() {
                 </div>
 
                 <div className="border-t border-slate-100 pt-4">
-                  <p className="text-xs font-bold text-slate-600 mb-3">Fungsi Jalan</p>
+                  <p className="text-xs font-bold text-slate-600 mb-3">Batas Wilayah</p>
                   <div className="space-y-1.5">
-                    {Object.entries(GEOJSON_LAYERS).map(([key, layer]) => (
-                      <label
-                        key={key}
-                        className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={visibleLayers[key]}
-                          onChange={() => toggleLayer(key)}
-                          className="w-4 h-4 text-blue-600 rounded"
-                        />
-                        <span 
-                          className="w-3 h-3 rounded-sm flex-shrink-0" 
-                          style={{ backgroundColor: layer.color }}
-                        />
-                        <span className="text-xs text-slate-700 flex-1">{layer.name}</span>
-                      </label>
-                    ))}
+                    <label className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={true}
+                        onChange={() => {}}
+                        disabled
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span 
+                        className="w-3 h-3 rounded-sm flex-shrink-0" 
+                        style={{ backgroundColor: boundaryStyle.color }}
+                      />
+                      <span className="text-xs text-slate-700 flex-1">
+                        Batas Kabupaten Lamongan
+                      </span>
+                    </label>
                   </div>
                 </div>
               </div>

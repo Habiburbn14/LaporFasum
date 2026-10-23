@@ -12,6 +12,8 @@ import PolicyModal from '../components/profile/PolicyModal';
 import { getUserProfile, logoutUser } from '../services/userApi';
 import { INITIAL_REPORTS } from '../utils/mockData';
 import toast from 'react-hot-toast';
+import LoadingScreen from '../components/ui/LoadingScreen';
+import ErrorState from '../components/ui/ErrorState';
 
 import { logout } from '../services/authApi';
 
@@ -19,6 +21,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -27,17 +30,20 @@ function ProfilePage() {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyType, setPolicyType] = useState('privacy');
 
+  const fetchProfile = async () => {
+    setLoading(true);
+    setError(null);
+    const result = await getUserProfile();
+    if (result.success) {
+      setProfile(result.data);
+    } else {
+      setError(result.error || 'Gagal memuat profil');
+      toast.error('Gagal memuat profil');
+    }
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      setLoading(true);
-      const result = await getUserProfile();
-      if (result.success) {
-        setProfile(result.data);
-      } else {
-        toast.error('Gagal memuat profil');
-      }
-      setLoading(false);
-    };
     fetchProfile();
   }, []);
 
@@ -60,16 +66,9 @@ function ProfilePage() {
     setShowPolicyModal(true);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-full bg-emerald-200 animate-pulse mx-auto mb-4"></div>
-          <p className="text-slate-500">Memuat profil...</p>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen message="Memuat profil..." withNav />;
+  
+  if (error) return <ErrorState message={error} onRetry={fetchProfile} withNav />;
 
   return (
     <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28">
@@ -104,10 +103,9 @@ function ProfilePage() {
                       <BadgeCheck className="w-5 h-5 text-blue-600" />
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 mb-3">Akun Terverifikasi</p>
                   <div className="space-y-1">
-                    <p className="text-xs text-slate-600"><span className="font-medium">NIK:</span> {profile.nik}</p>
-                    <p className="text-xs text-slate-600"><span className="font-medium">Email:</span> {profile.email}</p>
+                    <p className="text-xs text-slate-600"><span className="font-medium"></span> {profile.nik}</p>
+                    <p className="text-xs text-slate-600"><span className="font-medium"></span> {profile.email}</p>
                   </div>
                 </div>
               </div>
@@ -134,6 +132,20 @@ function ProfilePage() {
                 <p className="text-2xl font-bold text-blue-600">{stats.selesai}</p>
                 <p className="text-xs text-slate-600 mt-1">Tuntas Diperbaiki</p>
               </div>
+            </div>
+          </div>
+
+          <div className="px-5 mt-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+              <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Aktivitas Saya</p>
+              </div>
+              <MenuItem
+                icon={FileText}
+                title="Laporan Saya"
+                subtitle="Lihat semua laporan yang Anda kirim"
+                onClick={() => navigate('/laporan/saya')}
+              />
             </div>
           </div>
 

@@ -1,8 +1,10 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import HomePage from './pages/HomePage';
-import ReportPage from './pages/ReportPage';
+import FormStepPage from './pages/report/FormStepPage';
+import PreviewStepPage from './pages/report/PreviewStepPage';
+import SuccessStepPage from './pages/report/SuccessStepPage';
 import TrackingPage from './pages/TrackingPage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
@@ -20,7 +22,7 @@ import PublicRoute from './routes/PublicRoute';
 
 function App() {
   return (
-    <Router>
+    <div>
       <Toaster
         position="top-center"
         toastOptions={{
@@ -64,9 +66,19 @@ function App() {
         } />
         <Route path="/admin-login" element={<AdminLoginPage />} />
         
-        <Route path="/report" element={
+        <Route path="/report/form" element={
           <ProtectedRoute>
-            <ReportPage />
+            <FormStepPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/report/preview" element={
+          <ProtectedRoute>
+            <PreviewStepPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/report/success" element={
+          <ProtectedRoute>
+            <SuccessStepPage />
           </ProtectedRoute>
         } />
         <Route path="/tracking" element={
@@ -120,7 +132,7 @@ function App() {
           </ProtectedRoute>
         } />
       </Routes>
-    </Router>
+    </div>
   );
 }
 

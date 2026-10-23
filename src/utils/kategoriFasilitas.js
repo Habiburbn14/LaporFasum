@@ -14,6 +14,16 @@ export const KATEGORI_FASILITAS = {
   13: { id_kategori: 13, nama_kategori: "Fasilitas Pemerintahan dan Layanan Publik", icon: "pemerintah", color: "blue" },
   14: { id_kategori: 14, nama_kategori: "Fasilitas Keamanan dan Keselamatan (Polisi, Damkar)", icon: "keamanan", color: "red" },
   15: { id_kategori: 15, nama_kategori: "Pusat Perbelanjaan dan Fasilitas Ekonomi Modern", icon: "perbelanjaan", color: "pink" },
+  16: { id_kategori: 16, nama_kategori: "Lainnya", icon: "lainnya", color: "slate" },
 };
 
 export const KATEGORI_FASILITAS_ARRAY = Object.values(KATEGORI_FASILITAS);
+
+export const getKategoriIdByName = (nama) => {
+  if (!nama) return null;
+  const target = String(nama).trim().toLowerCase();
+  const found = KATEGORI_FASILITAS_ARRAY.find(
+    (item) => item.nama_kategori.toLowerCase() === target
+  );
+  return found ? found.id_kategori : null;
+};

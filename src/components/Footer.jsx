@@ -22,7 +22,7 @@ function Footer() {
             <h4 className="font-semibold mb-4 text-white">Navigasi</h4>
             <ul className="space-y-3 text-sm">
               <li><a href="/" className="text-slate-400 hover:text-emerald-400 transition-colors">Beranda</a></li>
-              <li><a href="/report" className="text-slate-400 hover:text-emerald-400 transition-colors">Buat Laporan</a></li>
+              <li><a href="/report/form" className="text-slate-400 hover:text-emerald-400 transition-colors">Buat Laporan</a></li>
               <li><a href="/tracking" className="text-slate-400 hover:text-emerald-400 transition-colors">Lacak Laporan</a></li>
               <li><a href="/dashboard" className="text-slate-400 hover:text-emerald-400 transition-colors">Dashboard</a></li>
             </ul>

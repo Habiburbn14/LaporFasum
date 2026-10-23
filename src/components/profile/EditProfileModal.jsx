@@ -7,7 +7,6 @@ function EditProfileModal({ isOpen, onClose, profile, onUpdate }) {
   const [formData, setFormData] = useState({
     nama: profile?.nama || '',
     email: profile?.email || '',
-    phone: profile?.phone || '',
     lokasi: profile?.lokasi || ''
   });
   const [errors, setErrors] = useState({});
@@ -23,11 +22,6 @@ function EditProfileModal({ isOpen, onClose, profile, onUpdate }) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.email || !emailRegex.test(formData.email)) {
       newErrors.email = 'Email tidak valid';
-    }
-    
-    const phoneRegex = /^(\+62|0)[0-9]{9,13}$/;
-    if (!formData.phone || !phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = 'Nomor telepon tidak valid';
     }
     
     if (!formData.lokasi || formData.lokasi.trim().length < 5) {
@@ -51,7 +45,7 @@ function EditProfileModal({ isOpen, onClose, profile, onUpdate }) {
     if (!validateForm()) return;
     
     setLoading(true);
-    const result = await updateUserProfile(formData);
+    const result = await updateUserProfile({ ...formData, nik: profile?.nik });
     setLoading(false);
     
     if (result.success) {
@@ -99,18 +93,6 @@ function EditProfileModal({ isOpen, onClose, profile, onUpdate }) {
             className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
           {errors.email && <p className="text-xs text-red-600 mt-1">{errors.email}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Telepon</label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-          {errors.phone && <p className="text-xs text-red-600 mt-1">{errors.phone}</p>}
         </div>
 
         <div>

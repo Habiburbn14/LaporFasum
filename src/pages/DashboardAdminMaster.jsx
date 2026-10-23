@@ -1,82 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut, 
   Search, Bell, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye 
 } from 'lucide-react';
-import { INITIAL_REPORTS, MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART } from '../utils/mockData';
+import { MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART } from '../utils/mockData';
 import WeeklyChart from '../components/mobile/WeeklyChart';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
-
-// Generate 10 mock reports for admin table demo
-const ADMIN_INITIAL_REPORTS = [
-  ...INITIAL_REPORTS,
-  {
-    id: 7,
-    ticket_code: "LMG-RAM-007",
-    judul: "Rambu Lalu Lintas Roboh di Perempatan Sugio",
-    kategori: "Rambu dan Marka Jalan",
-    kecamatan: "Sugio",
-    deskripsi: "Rambu penunjuk arah tertabrak truk dan roboh menghalangi bahu jalan.",
-    latitude: -6.8450,
-    longitude: 112.1950,
-    status: "Menunggu Verifikasi",
-    tanggal: "2026-08-22 09:10:00",
-    pelapor: "Joko Susilo",
-    foto: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: 8,
-    ticket_code: "LMG-TRN-008",
-    judul: "Atap Halte Bus Paciran Bocor Parah",
-    kategori: "Transportasi Publik (Halte, Terminal)",
-    kecamatan: "Paciran",
-    deskripsi: "Warga yang menunggu bus kepanasan dan kehujanan karena atap bolong.",
-    latitude: -6.7890,
-    longitude: 112.3210,
-    status: "Diterima",
-    tanggal: "2026-08-21 13:20:00",
-    pelapor: "Kusnadi",
-    foto: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: 9,
-    ticket_code: "LMG-OLH-009",
-    judul: "Lampu Stadion Olahraga Padam Sebagian",
-    kategori: "Fasilitas Olahraga dan Rekreasi",
-    kecamatan: "Lamongan",
-    deskripsi: "Lampu sorot tribun utara mati total, mengganggu latihan malam atlet.",
-    latitude: -6.8938,
-    longitude: 112.2140,
-    status: "Selesai",
-    tanggal: "2026-08-19 19:00:00",
-    pelapor: "Agung Prasetyo",
-    foto: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: 10,
-    ticket_code: "LMG-PSR-010",
-    judul: "Saluran Pembuangan Pasar Tradisional Mampet",
-    kategori: "Pasar Tradisional",
-    kecamatan: "Lamongan",
-    deskripsi: "Bau tidak sedap menyengat akibat got pasar meluap ke lorong pedagang.",
-    latitude: -6.8950,
-    longitude: 112.2170,
-    status: "Menunggu Verifikasi",
-    tanggal: "2026-08-18 07:30:00",
-    pelapor: "Sartika",
-    foto: "https://images.unsplash.com/photo-1581092163562-40038e57e0bc?auto=format&fit=crop&q=80&w=600"
-  }
-];
+import { useAuthStore } from '../stores/useAuthStore';
+import { laporanAPI } from '../services/api';
+import LoadingScreen from '../components/ui/LoadingScreen';
+import ErrorState from '../components/ui/ErrorState';
+import { getErrorMessage } from '../utils/error';
 
 function DashboardAdminMaster() {
   const navigate = useNavigate();
-  const [reports, setReports] = useState(ADMIN_INITIAL_REPORTS);
+  const { user, fetchUser, logout } = useAuthStore();
+  const [reports, setReports] = useState([]);
   const [searchCategory, setSearchCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await laporanAPI.list({});
+      setReports(res.data.data || res.data);
+    } catch (err) {
+      console.error('Error loading reports:', err);
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUser();
+    loadReports();
+  }, [fetchUser]);
 
   // Stats calculation
   const stats = {
@@ -98,6 +64,15 @@ function DashboardAdminMaster() {
   const handleStatusChange = (id, newStatus) => {
     setReports(reports.map(r => r.id === id ? { ...r, status: newStatus } : r));
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin-login');
+  };
+
+  if (loading) return <LoadingScreen message="Memuat dashboard..." />;
+
+  if (error) return <ErrorState message={error} onRetry={loadReports} />;
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
@@ -138,7 +113,7 @@ function DashboardAdminMaster() {
 
         <div className="p-4 border-t border-slate-800">
           <button 
-            onClick={() => navigate('/admin-login')}
+            onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 text-red-400 font-medium text-sm transition-colors"
           >
             <LogOut className="w-5 h-5" />
@@ -168,13 +143,11 @@ function DashboardAdminMaster() {
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
             </button>
             <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"
-                alt="Admin"
-                className="w-9 h-9 rounded-full object-cover"
-              />
+              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                {user?.nama?.charAt(0)?.toUpperCase() || 'A'}
+              </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">Admin Kabupaten</p>
+                <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama || 'Admin Kabupaten'}</p>
                 <p className="text-[11px] text-slate-500">Dinas PUPR Lamongan</p>
               </div>
             </div>

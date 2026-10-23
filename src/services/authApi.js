@@ -1,53 +1,56 @@
 import axios from 'axios';
+const BASE_URL = import.meta.env.VITE_BASE_URL;
 
-export const loginUser = async (nik, email, password, isAdmin = false) => {
-  // Mock authentication for development
-  console.log('Login attempt:', { email, isAdmin });
-  
-  // For development, accept any non-empty password
-  if (!email || !password) {
-    return { success: false, error: 'Email dan password harus diisi' };
-  }
-  
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Create mock token
-  const mockToken = 'mock-token-' + Date.now();
-  
-  // Determine user role
-  let role = 'user';
-  if (email.includes('admin') || isAdmin) {
-    role = 'admin';
-  }
-  
-  // Store in localStorage
-  localStorage.setItem('access_token', mockToken);
-  localStorage.setItem('user_email', email);
-  localStorage.setItem('user_role', role);
-  
-  return { 
-    success: true, 
-    token: mockToken,
-    user: {
-      email,
-      role,
-      name: email.includes('admin') ? 'Admin Kabupaten' : 'Warga Lamongan'
+// *LOGIN
+export const loginUser = async (identifier, password) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/auth/login`,
+      { identifier, password },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.data.access_token) {
+      localStorage.setItem('access_token', response.data.access_token);
+      return { 
+        success: true, 
+        token: response.data.access_token,
+        user: response.data.user
+      };
     }
-  };
+    return { success: false, error: 'Login gagal' };
+  } catch (error) {
+    let errorMessage = 'Login gagal';
+    const detail = error.response?.data?.detail;
+    if (Array.isArray(detail)) {
+      errorMessage = detail.map(d => d.msg || d.message).join(', ');
+    } else if (typeof detail === 'object' && detail !== null) {
+      errorMessage = detail.msg || detail.message || JSON.stringify(detail);
+    } else if (typeof detail === 'string') {
+      errorMessage = detail;
+    }
+    return { success: false, error: errorMessage };
+  }
 };
 
+// *REGISTER
 export const registerUser = async (nama, nik, email, password) => {
   try {
     const payload = {
-      nama,
       nik,
       email,
-      password
+      password,
+      nama_lengkap,
+      role: 1,
+      
     };
 
     const response = await axios.post(
-      'http://localhost:8000/auth/register',
+      `${BASE_URL}/auth/register/user`,
       payload,
       {
         headers: {
@@ -62,18 +65,30 @@ export const registerUser = async (nama, nik, email, password) => {
     }
     return { success: true, token: null };
   } catch (error) {
-    return { success: false, error: error.response?.data?.detail || 'Pendaftaran gagal' };
+    let errorMessage = 'Pendaftaran gagal';
+    const detail = error.response?.data?.detail;
+    if (Array.isArray(detail)) {
+      errorMessage = detail.map(d => d.msg || d.message).join(', ');
+    } else if (typeof detail === 'object' && detail !== null) {
+      errorMessage = detail.msg || detail.message || JSON.stringify(detail);
+    } else if (typeof detail === 'string') {
+      errorMessage = detail;
+    }
+    return { success: false, error: errorMessage };
   }
 };
 
+// *GET ACCESS TOKEN
 export const getAccessToken = () => {
   return localStorage.getItem('access_token');
 };
 
+// *IS LOGIN
 export const isLoggedIn = () => {
   return !!localStorage.getItem('access_token');
 };
 
+// *LOGOUT
 export const logout = () => {
   localStorage.removeItem('access_token');
 };

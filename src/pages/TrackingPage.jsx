@@ -1,16 +1,24 @@
-import React, { useState } from 'react';
-import { Search, MapPin, Clock, ChevronDown, ChevronUp, AlertCircle, Layers, Eye, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, MapPin, Clock, ChevronDown, ChevronUp, AlertCircle, Layers, Eye, RefreshCw } from 'lucide-react';
 import BottomNav from '../components/mobile/BottomNav';
 import CustomMap from '../components/CustomMap';
-import { INITIAL_REPORTS } from '../utils/mockData';
+import { useReportStore } from '../stores/useReportStore';
+import toast from 'react-hot-toast';
+import LoadingScreen from '../components/ui/LoadingScreen';
+import ErrorState from '../components/ui/ErrorState';
+import EmptyState from '../components/ui/EmptyState';
+import PullToRefresh from '../components/ui/PullToRefresh';
 
 const STATUS_STYLES = {
   'Menunggu Verifikasi': 'bg-amber-100 text-amber-700',
-  Diterima: 'bg-blue-100 text-blue-700',
-  Selesai: 'bg-emerald-100 text-emerald-700',
+  'Diterima': 'bg-blue-100 text-blue-700',
+  'Sedang Diproses': 'bg-purple-100 text-purple-700',
+  'Selesai': 'bg-emerald-100 text-emerald-700',
+  'Ditolak': 'bg-red-100 text-red-700',
 };
 
 function timeAgo(dateStr) {
+  if (!dateStr) return '-';
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
   if (hours < 1) return 'Baru saja';
@@ -19,9 +27,12 @@ function timeAgo(dateStr) {
 }
 
 function TrackingPage() {
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
+  const [viewMode, setViewMode] = useState('list');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState(null);
+  
+  const { reports, mapReports, loading, error, fetchReports, fetchAllReports, fetchMapPoints } = useReportStore();
+  const [refreshing, setRefreshing] = useState(false);
   
   // Map control states
   const [showLayerMenu, setShowLayerMenu] = useState(false);
@@ -38,14 +49,41 @@ function TrackingPage() {
     lokalPrimary: false,
     lokalSecondary: false,
   });
-  const [reportFilter, setReportFilter] = useState('all');
+  const [reportFilter, setReportFilter] = useState('mine');
   const [selectedReportOnMap, setSelectedReportOnMap] = useState(null);
 
-  const reports = INITIAL_REPORTS;
+  useEffect(() => {
+    if (reportFilter === 'mine') {
+      fetchReports();
+    } else {
+      fetchAllReports();
+    }
+  }, [reportFilter, fetchReports, fetchAllReports]);
+
+  // Fetch map points when viewing map
+  useEffect(() => {
+    if (viewMode === 'map') {
+      fetchMapPoints();
+    }
+  }, [viewMode, fetchMapPoints]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    if (reportFilter === 'mine') {
+      await fetchReports();
+    } else {
+      await fetchAllReports();
+    }
+    if (viewMode === 'map') {
+      await fetchMapPoints();
+    }
+    setRefreshing(false);
+  };
 
   const filteredReports = reports.filter(report => 
-    report.ticket_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    report.judul.toLowerCase().includes(searchQuery.toLowerCase())
+    (report.ticket_code && String(report.ticket_code).toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (report.judul && report.judul.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (report.deskripsi && report.deskripsi.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const toggleExpand = (id) => {
@@ -56,15 +94,27 @@ function TrackingPage() {
     setActiveLayers(prev => ({ ...prev, [layerKey]: !prev[layerKey] }));
   };
 
+  const getStatusStyle = (status) => {
+    return STATUS_STYLES[status] || 'bg-slate-100 text-slate-700';
+  };
+
+  if (loading && !refreshing) return <LoadingScreen message="Memuat laporan..." withNav />;
+
+  if (error && !refreshing) return <ErrorState message={error} onRetry={handleRefresh} withNav />;
+
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28 relative">
-      {/* Header */}
-      <header className="bg-white px-5 pt-8 pb-4 border-b border-slate-100">
+    <PullToRefresh onRefresh={handleRefresh}>
+      <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28 relative">
+        {/* Header */}
+        <header className="bg-white px-5 pt-8 pb-4 border-b border-slate-100">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 mb-1">Riwayat Laporan</h1>
             <p className="text-sm text-slate-500">Kelola dan pantau laporan Anda</p>
           </div>
+          <button onClick={handleRefresh} disabled={refreshing} className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center hover:bg-slate-200 transition disabled:opacity-50">
+            <RefreshCw className={`w-5 h-5 text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
         </div>
 
         {/* View Mode Toggle Switch */}
@@ -95,8 +145,8 @@ function TrackingPage() {
               <Search className="w-4.5 h-4.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Cari tiket atau judul laporan..."
-                className="flex-grow text-sm outline-none text-slate-700 placeholder:text-slate-400"
+                placeholder="Cari tiket, judul, atau deskripsi..."
+                className="grow text-sm outline-none text-slate-700 placeholder:text-slate-400"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -113,27 +163,33 @@ function TrackingPage() {
                       onClick={() => toggleExpand(report.id)}
                       className="w-full p-4 flex gap-3 items-start text-left"
                     >
-                      <img
-                        src={report.foto}
-                        alt={report.judul}
-                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-                      />
+                      <div className="w-16 h-16 rounded-xl bg-slate-100 shrink-0 flex items-center justify-center overflow-hidden">
+                        {report.foto ? (
+                          <img
+                            src={report.foto}
+                            alt={report.judul}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <AlertCircle className="w-8 h-8 text-slate-300" />
+                        )}
+                      </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <p className="text-sm font-semibold text-slate-900 line-clamp-2">{report.judul}</p>
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                            <ChevronUp className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                           ) : (
-                            <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0 mt-0.5" />
+                            <ChevronDown className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                           )}
                         </div>
-                        <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[report.status]}`}>
+                        <span className={`inline-block text-[10px] font-medium px-2 py-0.5 rounded-full ${getStatusStyle(report.status)}`}>
                           {report.status}
                         </span>
                         <div className="flex items-center gap-3 mt-2">
                           <div className="flex items-center gap-1 text-[11px] text-slate-400">
                             <MapPin className="w-3 h-3" />
-                            <span className="truncate">{report.kecamatan}</span>
+                            <span className="truncate max-w-37.5">{report.kecamatan}</span>
                           </div>
                           <div className="flex items-center gap-1 text-[11px] text-slate-400">
                             <Clock className="w-3 h-3" />
@@ -147,18 +203,38 @@ function TrackingPage() {
                       <div className="px-4 pb-4 border-t border-slate-100 pt-4 space-y-4 animate-in slide-in-from-top-2 duration-200">
                         <div>
                           <p className="text-xs font-semibold text-slate-700 mb-1">Kode Tiket</p>
-                          <p className="text-sm text-slate-600">{report.ticket_code}</p>
+                          <p className="text-sm text-slate-600 font-mono">{report.ticket_code || report.id || '-'}</p>
                         </div>
 
                         <div>
                           <p className="text-xs font-semibold text-slate-700 mb-1">Kategori</p>
-                          <p className="text-sm text-slate-600">{report.kategori}</p>
+                          <p className="text-sm text-slate-600">{report.kategori || '-'}</p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700 mb-1">Kecamatan</p>
+                          <p className="text-sm text-slate-600">{report.kecamatan}</p>
                         </div>
 
                         <div>
                           <p className="text-xs font-semibold text-slate-700 mb-1">Deskripsi</p>
-                          <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl">{report.deskripsi}</p>
+                          <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl">{report.deskripsi || '-'}</p>
                         </div>
+
+                        <div>
+                          <p className="text-xs font-semibold text-slate-700 mb-1">Waktu Pelaporan</p>
+                          <p className="text-sm text-slate-600">{report.created_at ? new Date(report.created_at).toLocaleString('id-ID') : '-'}</p>
+                        </div>
+
+                        {report.tanggapan && (
+                          <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+                            <p className="text-xs font-semibold text-blue-700 mb-1">Tanggapan Petugas</p>
+                            <p className="text-sm text-blue-600">{report.tanggapan}</p>
+                            {report.tanggal_tanggapan && (
+                              <p className="text-xs text-blue-400 mt-1">Ditanggapi pada: {new Date(report.tanggal_tanggapan).toLocaleString('id-ID')}</p>
+                            )}
+                          </div>
+                        )}
 
                         <div className="pt-2 flex justify-end">
                           <button 
@@ -178,19 +254,18 @@ function TrackingPage() {
                 );
               })
             ) : (
-              <div className="text-center py-12">
-                <AlertCircle className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-600 font-medium">Tidak ada laporan ditemukan</p>
-                <p className="text-xs text-slate-400 mt-1">Coba kata kunci lain</p>
-              </div>
+              <EmptyState 
+                message="Belum ada laporan" 
+                subMessage="Mulai laporkan fasilitas yang rusak di sekitar Anda" 
+              />
             )}
           </div>
         </>
       ) : (
         /* MAP VIEW MODE */
-        <div className="relative w-full h-[calc(100vh-190px)] bg-slate-200">
+        <div className="relative w-full h-[calc(100vh-190px)] bg-slate-200 overflow-hidden">
           {/* Floating Control Button (Top Right) */}
-          <div className="absolute top-4 right-4 z-[400]">
+          <div className="absolute top-4 right-4 z-[999]">
             <button
               onClick={() => setShowLayerMenu(!showLayerMenu)}
               className="w-11 h-11 bg-white rounded-2xl shadow-lg border border-slate-200 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-all"
@@ -201,7 +276,7 @@ function TrackingPage() {
 
             {/* Floating Layer Menu Popup */}
             {showLayerMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 z-[500] animate-in fade-in zoom-in-95 duration-150">
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 z-[500] animate-in fade-in zoom-in-95 duration-150 max-h-[calc(100vh-160px)] overflow-y-auto">
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
                   <h3 className="font-bold text-slate-900 text-sm">Pengaturan Peta</h3>
                   <button onClick={() => setShowLayerMenu(false)} className="text-xs text-slate-400 hover:text-slate-700 font-medium">Tutup</button>
@@ -315,7 +390,10 @@ function TrackingPage() {
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Filter Marker</p>
                   <div className="flex bg-slate-100 rounded-lg p-1">
                     <button
-                      onClick={() => setReportFilter('all')}
+                      onClick={() => {
+                        setReportFilter('all');
+                        fetchAllReports();
+                      }}
                       className={`flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-all ${
                         reportFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600'
                       }`}
@@ -323,7 +401,10 @@ function TrackingPage() {
                       Semua
                     </button>
                     <button
-                      onClick={() => setReportFilter('mine')}
+                      onClick={() => {
+                        setReportFilter('mine');
+                        fetchReports();
+                      }}
                       className={`flex-1 py-1.5 text-[11px] font-semibold rounded-md transition-all ${
                         reportFilter === 'mine' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600'
                       }`}
@@ -336,9 +417,36 @@ function TrackingPage() {
             )}
           </div>
 
-          {/* Custom Map Component */}
+          {/* Filter Laporan - Overlaying Map */}
+          <div className="absolute top-4 left-4 right-18 z-[999]">
+            <div className="flex bg-white/90 backdrop-blur-sm rounded-xl p-1 shadow-lg border border-slate-200">
+              <button
+                onClick={() => {
+                  setReportFilter('all');
+                  fetchAllReports();
+                }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  reportFilter === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600'
+                }`}
+              >
+                Semua
+              </button>
+              <button
+                onClick={() => {
+                  setReportFilter('mine');
+                  fetchReports();
+                }}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all ${
+                  reportFilter === 'mine' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600'
+                }`}
+              >
+                Laporan Saya
+              </button>
+            </div>
+          </div>
+
           <CustomMap
-            reports={reports}
+            reports={mapReports}
             activeLayers={activeLayers}
             baseMap={baseMap}
             onMarkerClick={setSelectedReportOnMap}
@@ -350,15 +458,13 @@ function TrackingPage() {
             <div className="absolute inset-x-0 bottom-0 z-[1000] p-4 bg-white rounded-t-3xl shadow-2xl border-t border-slate-100 animate-in slide-in-from-bottom duration-200">
               <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-3"></div>
               <div className="flex gap-3 items-start mb-3">
-                <img
-                  src={selectedReportOnMap.foto}
-                  alt={selectedReportOnMap.judul}
-                  className="w-20 h-20 rounded-2xl object-cover flex-shrink-0"
-                />
+                <div className="w-20 h-20 rounded-2xl bg-slate-100 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  <AlertCircle className="w-10 h-10 text-slate-300" />
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-blue-600">{selectedReportOnMap.ticket_code}</span>
-                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${STATUS_STYLES[selectedReportOnMap.status]}`}>
+                    <span className="text-xs font-semibold text-blue-600">{selectedReportOnMap.ticket_code || selectedReportOnMap.id}</span>
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${getStatusStyle(selectedReportOnMap.status)}`}>
                       {selectedReportOnMap.status}
                     </span>
                   </div>
@@ -366,7 +472,7 @@ function TrackingPage() {
                   <p className="text-xs text-slate-500 mt-0.5">{selectedReportOnMap.kategori}</p>
                   <div className="flex items-center gap-2 mt-2 text-[11px] text-slate-400">
                     <MapPin className="w-3 h-3" />
-                    <span className="truncate">{selectedReportOnMap.kecamatan}</span>
+                    <span className="truncate">Lamongan</span>
                   </div>
                 </div>
               </div>
@@ -396,7 +502,8 @@ function TrackingPage() {
       )}
 
       <BottomNav />
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }
 
