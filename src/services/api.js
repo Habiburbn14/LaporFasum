@@ -27,7 +27,7 @@ api.interceptors.request.use((config) => {
 export const laporanAPI = {
   create: (data) =>
     api.post('/laporan', data),
-  list: (filters) => api.get('/laporan/list', { params: filters }),
+  list: (filters) => api.get('/laporan', { params: filters }),
   getById: (id) => api.get(`/laporan/${id}`),
   updateStatus: (id, status, tanggapan) => api.put(`/laporan/${id}/status`, { status, tanggapan }),
 };

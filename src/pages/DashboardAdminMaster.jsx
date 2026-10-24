@@ -30,7 +30,7 @@ function DashboardAdminMaster() {
       setLoading(true);
       setError(null);
       const res = await laporanAPI.list({});
-      setReports(res.data.data || res.data);
+      setReports(res.data.data);
     } catch (err) {
       console.error('Error loading reports:', err);
       setError(getErrorMessage(err));
@@ -239,8 +239,8 @@ function DashboardAdminMaster() {
                   zoomControl={false}
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  {reports.map((r, i) => (
-                    <Marker key={i} position={[r.latitude, r.longitude]}>
+                  {reports.map((r) => (
+                    <Marker key={r.id || r.id_laporan} position={[r.latitude, r.longitude]}>
                       <Popup>
                         <div className="text-xs">
                           <p className="font-bold">{r.ticket_code}</p>
@@ -307,28 +307,27 @@ function DashboardAdminMaster() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {displayedReports.map((report) => (
                     <tr key={report.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-4 px-6 font-semibold text-blue-600">{report.ticket_code}</td>
+                      <td className="py-4 px-6 font-semibold text-blue-600">{report.id_laporan}</td>
                       <td className="py-4 px-6">
-                        <p className="font-medium text-slate-800">{report.pelapor}</p>
-                        <p className="text-xs text-slate-400">+62 812-3456-7890</p>
+                        <p className="font-medium text-slate-800">{report.nama_lengkap}</p>
                       </td>
                       <td className="py-4 px-6 max-w-xs">
-                        <p className="font-medium text-slate-800 truncate">{report.kategori}</p>
-                        <p className="text-xs text-slate-400 truncate">{report.judul} - {report.kecamatan}</p>
+                        <p className="font-medium text-slate-800 truncate">{report.nama_kategori}</p>
+                        <p className="text-xs text-slate-400 truncate">{report.judul_laporan} - {report.id_kecamatan_kejadian}</p>
                       </td>
-                      <td className="py-4 px-6 text-xs text-slate-600">{new Date(report.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                      <td className="py-4 px-6 text-xs text-slate-600">{new Date(report.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       <td className="py-4 px-6">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                          report.status === 'Menunggu Verifikasi' ? 'bg-amber-50 text-amber-700' :
-                          report.status === 'Diterima' ? 'bg-blue-50 text-blue-700' :
+                          report.status_terkini === 'Menunggu Verifikasi' ? 'bg-amber-50 text-amber-700' :
+                          report.status_terkini === 'Diterima' ? 'bg-blue-50 text-blue-700' :
                           'bg-emerald-50 text-emerald-700'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            report.status === 'Menunggu Verifikasi' ? 'bg-amber-500' :
-                            report.status === 'Diterima' ? 'bg-blue-500' :
+                            report.status_terkini === 'Menunggu Verifikasi' ? 'bg-amber-500' :
+                            report.status_terkini === 'Diterima' ? 'bg-blue-500' :
                             'bg-emerald-500'
                           }`} />
-                          {report.status}
+                          {report.status_terkini}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
@@ -376,7 +375,7 @@ function DashboardAdminMaster() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.ticket_code}</h3>
+              <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.id_laporan}</h3>
               <button 
                 onClick={() => setSelectedReport(null)}
                 className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
@@ -386,19 +385,19 @@ function DashboardAdminMaster() {
             </div>
             
             <div className="space-y-3">
-              <img src={selectedReport.foto} alt="Bukti" className="w-full h-48 object-cover rounded-xl" />
+              <img src={selectedReport.foto_bukti} alt="Bukti" className="w-full h-48 object-cover rounded-xl" />
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Judul & Kategori</p>
-                <p className="font-semibold text-slate-800 text-sm">{selectedReport.judul}</p>
-                <p className="text-xs text-blue-600 font-medium">{selectedReport.kategori}</p>
+                <p className="font-semibold text-slate-800 text-sm">{selectedReport.judul_laporaan}</p>
+                <p className="text-xs text-blue-600 font-medium">{selectedReport.id_kategori}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Lokasi & Kecamatan</p>
-                <p className="text-sm text-slate-700">{selectedReport.kecamatan}</p>
+                <p className="text-sm text-slate-700">{selectedReport.nama_kecamatan}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Deskripsi</p>
-                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi}</p>
+                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi_laporan}</p>
               </div>
             </div>
 

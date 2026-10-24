@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { loginUser } from '../services/authApi';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 function AdminLoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -13,12 +15,13 @@ function AdminLoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const result = await loginUser(formData.username, formData.username, formData.password, true);
+    const result = await loginUser(formData.username, formData.password);
     setLoading(false);
 
     if (result.success) {
       toast.success('Login Admin Berhasil');
-      navigate('/admin/master');
+      await login(result.token, result.user);
+      navigate('/admin/master', { replace: true });
     } else {
       toast.error(result.error);
     }

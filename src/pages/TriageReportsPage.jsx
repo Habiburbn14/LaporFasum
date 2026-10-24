@@ -26,7 +26,7 @@ function TriageReportsPage() {
       setLoading(true);
       setError(null);
       const res = await laporanAPI.list({});
-      setReports(res.data.data || res.data);
+      setReports(res.data.data);
     } catch (err) {
       console.error('Error loading reports:', err);
       setError(getErrorMessage(err));
@@ -46,7 +46,7 @@ function TriageReportsPage() {
       r.judul.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.pelapor.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchStatus = filterStatus === '' || r.status === filterStatus;
+    const matchStatus = filterStatus === '' || r.status_terkini === filterStatus;
     return matchSearch && matchStatus;
   });
 
@@ -202,20 +202,20 @@ function TriageReportsPage() {
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {filteredReports.map((report) => (
                     <tr key={report.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-4 px-6 font-semibold text-blue-600">{report.ticket_code}</td>
+                      <td className="py-4 px-6 font-semibold text-blue-600">{report.id_laporan}</td>
                       <td className="py-4 px-6">
-                        <p className="font-medium text-slate-800">{report.pelapor}</p>
+                        <p className="font-medium text-slate-800">{report.nama_lengkap}</p>
                       </td>
                       <td className="py-4 px-6 max-w-xs">
-                        <p className="font-medium text-slate-800 truncate">{report.judul}</p>
+                        <p className="font-medium text-slate-800 truncate">{report.judul_laporan}</p>
                       </td>
                       <td className="py-4 px-6">
-                        <p className="text-xs text-slate-600">{report.kategori}</p>
+                        <p className="text-xs text-slate-600">{report.nama_kategori}</p>
                       </td>
-                      <td className="py-4 px-6 text-xs text-slate-600">{new Date(report.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                      <td className="py-4 px-6 text-xs text-slate-600">{new Date(report.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       <td className="py-4 px-6">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(report.status)}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(report.status_terkini)}`} />
                           {report.status}
                         </span>
                       </td>
@@ -223,7 +223,7 @@ function TriageReportsPage() {
                         <div className="inline-flex items-center gap-2">
                           <select
                             value={report.status}
-                            onChange={(e) => handleStatusChange(report.id, e.target.value)}
+                            onChange={(e) => handleStatusChange(report.id_laporan, e.target.value)}
                             className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
@@ -257,7 +257,7 @@ function TriageReportsPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.ticket_code}</h3>
+              <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.id_laporan}</h3>
               <button 
                 onClick={() => setSelectedReport(null)}
                 className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
@@ -267,27 +267,27 @@ function TriageReportsPage() {
             </div>
             
             <div className="space-y-3">
-              <img src={selectedReport.foto} alt="Bukti" className="w-full h-48 object-cover rounded-xl" />
+              <img src={selectedReport.foto_bukti} alt="Bukti" className="w-full h-48 object-cover rounded-xl" />
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Judul & Kategori</p>
-                <p className="font-semibold text-slate-800 text-sm">{selectedReport.judul}</p>
-                <p className="text-xs text-blue-600 font-medium">{selectedReport.kategori}</p>
+                <p className="font-semibold text-slate-800 text-sm">{selectedReport.judul_laporan}</p>
+                <p className="text-xs text-blue-600 font-medium">{selectedReport.nama_kategori}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Kecamatan & Lokasi</p>
-                <p className="text-sm text-slate-700">{selectedReport.kecamatan}</p>
+                <p className="text-sm text-slate-700">{selectedReport.nama_kecamatan}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Deskripsi</p>
-                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi}</p>
+                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi_laporan}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Pelapor</p>
-                <p className="text-sm text-slate-700">{selectedReport.pelapor}</p>
+                <p className="text-sm text-slate-700">{selectedReport.nama_lengkap}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Tanggal Laporan</p>
-                <p className="text-sm text-slate-700">{new Date(selectedReport.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                <p className="text-sm text-slate-700">{new Date(selectedReport.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
               </div>
             </div>
 
