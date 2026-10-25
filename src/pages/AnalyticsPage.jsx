@@ -14,7 +14,7 @@ import { getErrorMessage } from '../utils/error';
 
 function AnalyticsPage() {
   const navigate = useNavigate();
-  const { user, fetchUser, logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [timeRange, setTimeRange] = useState('mingguan');
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,9 +35,8 @@ function AnalyticsPage() {
   };
 
   useEffect(() => {
-    fetchUser();
     loadReports();
-  }, [fetchUser]);
+  }, []);
 
   const chartData = timeRange === 'mingguan' ? MOCK_WEEKLY_CHART : MOCK_MONTHLY_CHART;
 

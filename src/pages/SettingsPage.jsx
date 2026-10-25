@@ -17,19 +17,8 @@ function SettingsPage() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        await fetchUser();
-      } catch (err) {
-        setError(getErrorMessage(err));
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [fetchUser]);
+    // fetchUser is called by ProtectedRoute, no need to call again
+  }, []);
 
   const handleLogout = () => {
     logout();

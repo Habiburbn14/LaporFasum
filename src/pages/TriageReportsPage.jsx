@@ -13,7 +13,7 @@ import { getErrorMessage } from '../utils/error';
 
 function TriageReportsPage() {
   const navigate = useNavigate();
-  const { user, fetchUser, logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [reports, setReports] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -36,9 +36,8 @@ function TriageReportsPage() {
   };
 
   useEffect(() => {
-    fetchUser();
     loadReports();
-  }, [fetchUser]);
+  }, []);
 
   const filteredReports = reports.filter(r => {
     const matchSearch = searchTerm === '' || 

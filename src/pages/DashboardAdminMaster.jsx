@@ -16,7 +16,7 @@ import { getErrorMessage } from '../utils/error';
 
 function DashboardAdminMaster() {
   const navigate = useNavigate();
-  const { user, fetchUser, logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [reports, setReports] = useState([]);
   const [searchCategory, setSearchCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -40,9 +40,8 @@ function DashboardAdminMaster() {
   };
 
   useEffect(() => {
-    fetchUser();
     loadReports();
-  }, [fetchUser]);
+  }, []);
 
   // Stats calculation
   const stats = {
@@ -306,7 +305,7 @@ function DashboardAdminMaster() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {displayedReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={report.id_laporan || report.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-4 px-6 font-semibold text-blue-600">{report.id_laporan}</td>
                       <td className="py-4 px-6">
                         <p className="font-medium text-slate-800">{report.nama_lengkap}</p>

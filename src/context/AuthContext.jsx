@@ -11,7 +11,7 @@ export const AuthProvider = ({ children }) => {
   const baseUrl = import.meta.env.VITE_BASE_URL;
 
   const fetchUser = useCallback(async () => {
-    const token = localStorage.getItem('access_token');
+    const token = sessionStorage.getItem('access_token');
     if (token) {
       try {
         const res = await axios.get(`${baseUrl}/auth/me`, {
@@ -20,8 +20,7 @@ export const AuthProvider = ({ children }) => {
         setUser(res.data);
       } catch (error) {
         console.error("Token kadaluarsa atau tidak valid:", error);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user_data');
+        sessionStorage.removeItem('access_token');
         setUser(null);
         navigate('/login');
       }
@@ -36,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   }, [fetchUser]);
 
   const login = useCallback(async (token, userData) => {
-    localStorage.setItem('access_token', token);
+    sessionStorage.setItem('access_token', token);
     if (userData) {
       setUser(userData);
     } else {
@@ -46,8 +45,7 @@ export const AuthProvider = ({ children }) => {
   }, [fetchUser]);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_data');
+    sessionStorage.removeItem('access_token');
     setUser(null);
     navigate('/login');
   }, [navigate]);

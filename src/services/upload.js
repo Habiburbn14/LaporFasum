@@ -1,5 +1,5 @@
 export async function uploadLaporan(formData) {
-  const token = localStorage.getItem('access_token');
+  const token = sessionStorage.getItem('access_token');
   const baseUrl = import.meta.env.VITE_BASE_URL || '';
   
   const controller = new AbortController();

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import axios from 'axios';
 
 const baseUrl = import.meta.env.VITE_BASE_URL || '';
@@ -8,7 +8,7 @@ export const useAuthStore = create(
   persist(
     (set, get) => ({
       user: null,
-      token: localStorage.getItem('access_token') || null,
+      token: null,
       loading: true,
 
       fetchUser: async () => {
@@ -29,7 +29,7 @@ export const useAuthStore = create(
       },
 
       login: async (token, userData) => {
-        localStorage.setItem('access_token', token);
+        sessionStorage.setItem('access_token', token);
         set({ token });
         if (userData) {
           set({ user: userData, loading: false });
@@ -39,9 +39,8 @@ export const useAuthStore = create(
       },
 
       logout: () => {
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('user_data');
-        set({ user: null, token: null });
+        sessionStorage.removeItem('access_token');
+        set({ user: null, token: null, loading: false });
       },
 
       updateUser: (userData) => set({ user: userData }),
@@ -49,7 +48,13 @@ export const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ token: state.token, user: state.user }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.setLoading(false);
+        }
+      },
     }
   )
 );

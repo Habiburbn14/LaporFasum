@@ -15,7 +15,7 @@ export const loginUser = async (identifier, password) => {
     );
 
     if (response.data.access_token) {
-      localStorage.setItem('access_token', response.data.access_token);
+      sessionStorage.setItem('access_token', response.data.access_token);
       return { 
         success: true, 
         token: response.data.access_token,
@@ -60,7 +60,7 @@ export const registerUser = async (nama, nik, email, password) => {
     );
 
     if (response.data.access_token) {
-      localStorage.setItem('access_token', response.data.access_token);
+      sessionStorage.setItem('access_token', response.data.access_token);
       return { success: true, token: response.data.access_token };
     }
     return { success: true, token: null };
@@ -80,15 +80,15 @@ export const registerUser = async (nama, nik, email, password) => {
 
 // *GET ACCESS TOKEN
 export const getAccessToken = () => {
-  return localStorage.getItem('access_token');
+  return sessionStorage.getItem('access_token');
 };
 
 // *IS LOGIN
 export const isLoggedIn = () => {
-  return !!localStorage.getItem('access_token');
+  return !!sessionStorage.getItem('access_token');
 };
 
 // *LOGOUT
 export const logout = () => {
-  localStorage.removeItem('access_token');
+  sessionStorage.removeItem('access_token');
 };
