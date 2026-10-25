@@ -110,6 +110,10 @@ function LoginPage() {
           <Link to="/register" className="inline-block w-full py-3 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-medium rounded-xl transition">
             Daftar Akun di Sini
           </Link>
+          <p className="text-sm text-slate-500 pt-2">Login sebagai Admin?</p>
+          <Link to="/admin-login" className="inline-block w-full py-3 bg-white border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-medium rounded-xl transition">
+            Masuk Admin
+          </Link>
         </div>
       </div>
       
