@@ -146,7 +146,7 @@ function DashboardAdminMaster() {
                 {user?.nama?.charAt(0)?.toUpperCase() || 'A'}
               </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama || 'Admin Kabupaten'}</p>
+                <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama_lengkap || 'Admin'}</p>
                 <p className="text-[11px] text-slate-500">Dinas PUPR Lamongan</p>
               </div>
             </div>

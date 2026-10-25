@@ -53,6 +53,7 @@ export const useAuthStore = create(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.setLoading(false);
+          if (state.token) state.fetchUser();
         }
       },
     }
