@@ -27,4 +27,6 @@
 }
 .leaflet-container {
   font-family: inherit !important;
+  z-index: 0;
+  isolation: isolate;
 }

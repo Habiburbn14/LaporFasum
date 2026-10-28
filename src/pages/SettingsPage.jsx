@@ -1,33 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut,
   Bell, User, Shield, Globe, Info, HelpCircle, AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
-import LoadingScreen from '../components/ui/LoadingScreen';
-import ErrorState from '../components/ui/ErrorState';
-import { getErrorMessage } from '../utils/error';
 
 function SettingsPage() {
   const navigate = useNavigate();
-  const { user, fetchUser, logout } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [activeTab, setActiveTab] = useState('profile');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    // fetchUser is called by ProtectedRoute, no need to call again
-  }, []);
 
   const handleLogout = () => {
     logout();
     navigate('/admin-login');
   };
-
-  if (loading) return <LoadingScreen message="Memuat settings..." />;
-
-  if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
