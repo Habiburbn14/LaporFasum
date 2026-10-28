@@ -1,83 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut, 
   Search, Bell, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye 
 } from 'lucide-react';
-import { INITIAL_REPORTS, MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART } from '../utils/mockData';
+import { MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART } from '../utils/mockData';
 import WeeklyChart from '../components/mobile/WeeklyChart';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
-
-// Generate 10 mock reports for admin table demo
-const ADMIN_INITIAL_REPORTS = [
-  ...INITIAL_REPORTS,
-  {
-    id: 7,
-    ticket_code: "LMG-RAM-007",
-    judul: "Rambu Lalu Lintas Roboh di Perempatan Sugio",
-    kategori: "Rambu dan Marka Jalan",
-    kecamatan: "Sugio",
-    deskripsi: "Rambu penunjuk arah tertabrak truk dan roboh menghalangi bahu jalan.",
-    latitude: -6.8450,
-    longitude: 112.1950,
-    status: "Menunggu Verifikasi",
-    tanggal: "2026-08-22 09:10:00",
-    pelapor: "Joko Susilo",
-    foto: "https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: 8,
-    ticket_code: "LMG-TRN-008",
-    judul: "Atap Halte Bus Paciran Bocor Parah",
-    kategori: "Transportasi Publik (Halte, Terminal)",
-    kecamatan: "Paciran",
-    deskripsi: "Warga yang menunggu bus kepanasan dan kehujanan karena atap bolong.",
-    latitude: -6.7890,
-    longitude: 112.3210,
-    status: "Diterima",
-    tanggal: "2026-08-21 13:20:00",
-    pelapor: "Kusnadi",
-    foto: "https://images.unsplash.com/photo-1530587191325-3db32d826c18?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: 9,
-    ticket_code: "LMG-OLH-009",
-    judul: "Lampu Stadion Olahraga Padam Sebagian",
-    kategori: "Fasilitas Olahraga dan Rekreasi",
-    kecamatan: "Lamongan",
-    deskripsi: "Lampu sorot tribun utara mati total, mengganggu latihan malam atlet.",
-    latitude: -6.8938,
-    longitude: 112.2140,
-    status: "Selesai",
-    tanggal: "2026-08-19 19:00:00",
-    pelapor: "Agung Prasetyo",
-    foto: "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&q=80&w=600"
-  },
-  {
-    id: 10,
-    ticket_code: "LMG-PSR-010",
-    judul: "Saluran Pembuangan Pasar Tradisional Mampet",
-    kategori: "Pasar Tradisional",
-    kecamatan: "Lamongan",
-    deskripsi: "Bau tidak sedap menyengat akibat got pasar meluap ke lorong pedagang.",
-    latitude: -6.8950,
-    longitude: 112.2170,
-    status: "Menunggu Verifikasi",
-    tanggal: "2026-08-18 07:30:00",
-    pelapor: "Sartika",
-    foto: "https://images.unsplash.com/photo-1581092163562-40038e57e0bc?auto=format&fit=crop&q=80&w=600"
-  }
-];
+import { useAuthStore } from '../stores/useAuthStore';
+import { laporanAPI } from '../services/api';
+import LoadingScreen from '../components/ui/LoadingScreen';
+import ErrorState from '../components/ui/ErrorState';
+import { getErrorMessage } from '../utils/error';
 
 function DashboardAdminMaster() {
   const navigate = useNavigate();
-  const [reports, setReports] = useState(ADMIN_INITIAL_REPORTS);
+  const { user, logout } = useAuthStore();
+  const [reports, setReports] = useState([]);
   const [searchCategory, setSearchCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
-  const [timeRange, setTimeRange] = useState('mingguan');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await laporanAPI.list({});
+      setReports(res.data.data);
+    } catch (err) {
+      console.error('Error loading reports:', err);
+      setError(getErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReports();
+  }, []);
 
   // Stats calculation
   const stats = {
@@ -86,9 +50,6 @@ function DashboardAdminMaster() {
     diproses: reports.filter(r => r.status === 'Diterima').length,
     selesai: reports.filter(r => r.status === 'Selesai').length,
   };
-
-  // Chart data based on time range
-  const chartData = timeRange === 'mingguan' ? MOCK_WEEKLY_CHART : MOCK_MONTHLY_CHART;
 
   // Filter reports
   const filteredReports = reports.filter(r => {
@@ -102,6 +63,15 @@ function DashboardAdminMaster() {
   const handleStatusChange = (id, newStatus) => {
     setReports(reports.map(r => r.id === id ? { ...r, status: newStatus } : r));
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/admin-login');
+  };
+
+  if (loading) return <LoadingScreen message="Memuat dashboard..." />;
+
+  if (error) return <ErrorState message={error} onRetry={loadReports} />;
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
@@ -142,7 +112,7 @@ function DashboardAdminMaster() {
 
         <div className="p-4 border-t border-slate-800">
           <button 
-            onClick={() => navigate('/admin-login')}
+            onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 text-red-400 font-medium text-sm transition-colors"
           >
             <LogOut className="w-5 h-5" />
@@ -172,13 +142,11 @@ function DashboardAdminMaster() {
               <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
             </button>
             <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"
-                alt="Admin"
-                className="w-9 h-9 rounded-full object-cover"
-              />
+              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                {user?.nama?.charAt(0)?.toUpperCase() || 'A'}
+              </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">Admin Kabupaten</p>
+                <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama_lengkap || 'Admin'}</p>
                 <p className="text-[11px] text-slate-500">Dinas PUPR Lamongan</p>
               </div>
             </div>
@@ -244,22 +212,12 @@ function DashboardAdminMaster() {
                   <p className="text-xs text-slate-500 mt-0.5">Statistik pengaduan infrastruktur di Kabupaten Lamongan</p>
                 </div>
                 <div className="flex bg-slate-100 rounded-full p-1">
-                  <button 
-                    onClick={() => setTimeRange('mingguan')}
-                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${timeRange === 'mingguan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    Mingguan
-                  </button>
-                  <button 
-                    onClick={() => setTimeRange('bulanan')}
-                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${timeRange === 'bulanan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                  >
-                    Bulanan
-                  </button>
+                  <button className="text-xs font-medium px-3 py-1 rounded-full bg-white text-blue-600 shadow-sm">Mingguan</button>
+                  <button className="text-xs font-medium px-3 py-1 rounded-full text-slate-500">Bulanan</button>
                 </div>
               </div>
               <div className="h-64 flex items-center justify-center">
-                <WeeklyChart data={chartData} width={600} height={200} />
+                <WeeklyChart data={MOCK_WEEKLY_CHART} width={600} height={200} />
               </div>
             </div>
 
@@ -280,8 +238,8 @@ function DashboardAdminMaster() {
                   zoomControl={false}
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  {reports.map((r, i) => (
-                    <Marker key={i} position={[r.latitude, r.longitude]}>
+                  {reports.map((r) => (
+                    <Marker key={r.id || r.id_laporan} position={[r.latitude, r.longitude]}>
                       <Popup>
                         <div className="text-xs">
                           <p className="font-bold">{r.ticket_code}</p>
@@ -347,29 +305,28 @@ function DashboardAdminMaster() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {displayedReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-4 px-6 font-semibold text-blue-600">{report.ticket_code}</td>
+                    <tr key={report.id_laporan || report.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-4 px-6 font-semibold text-blue-600">{report.id_laporan}</td>
                       <td className="py-4 px-6">
-                        <p className="font-medium text-slate-800">{report.pelapor}</p>
-                        <p className="text-xs text-slate-400">+62 812-3456-7890</p>
+                        <p className="font-medium text-slate-800">{report.nama_lengkap}</p>
                       </td>
                       <td className="py-4 px-6 max-w-xs">
-                        <p className="font-medium text-slate-800 truncate">{report.kategori}</p>
-                        <p className="text-xs text-slate-400 truncate">{report.judul} - {report.kecamatan}</p>
+                        <p className="font-medium text-slate-800 truncate">{report.nama_kategori}</p>
+                        <p className="text-xs text-slate-400 truncate">{report.judul_laporan} - {report.id_kecamatan_kejadian}</p>
                       </td>
-                      <td className="py-4 px-6 text-xs text-slate-600">{new Date(report.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                      <td className="py-4 px-6 text-xs text-slate-600">{new Date(report.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       <td className="py-4 px-6">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                          report.status === 'Menunggu Verifikasi' ? 'bg-amber-50 text-amber-700' :
-                          report.status === 'Diterima' ? 'bg-blue-50 text-blue-700' :
+                          report.status_terkini === 'Menunggu Verifikasi' ? 'bg-amber-50 text-amber-700' :
+                          report.status_terkini === 'Diterima' ? 'bg-blue-50 text-blue-700' :
                           'bg-emerald-50 text-emerald-700'
                         }`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${
-                            report.status === 'Menunggu Verifikasi' ? 'bg-amber-500' :
-                            report.status === 'Diterima' ? 'bg-blue-500' :
+                            report.status_terkini === 'Menunggu Verifikasi' ? 'bg-amber-500' :
+                            report.status_terkini === 'Diterima' ? 'bg-blue-500' :
                             'bg-emerald-500'
                           }`} />
-                          {report.status}
+                          {report.status_terkini}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
@@ -417,7 +374,7 @@ function DashboardAdminMaster() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.ticket_code}</h3>
+              <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.id_laporan}</h3>
               <button 
                 onClick={() => setSelectedReport(null)}
                 className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
@@ -427,19 +384,19 @@ function DashboardAdminMaster() {
             </div>
             
             <div className="space-y-3">
-              <img src={selectedReport.foto} alt="Bukti" className="w-full h-48 object-cover rounded-xl" />
+              <img src={selectedReport.foto_bukti} alt="Bukti" className="w-full h-48 object-cover rounded-xl" />
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Judul & Kategori</p>
-                <p className="font-semibold text-slate-800 text-sm">{selectedReport.judul}</p>
-                <p className="text-xs text-blue-600 font-medium">{selectedReport.kategori}</p>
+                <p className="font-semibold text-slate-800 text-sm">{selectedReport.judul_laporaan}</p>
+                <p className="text-xs text-blue-600 font-medium">{selectedReport.id_kategori}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Lokasi & Kecamatan</p>
-                <p className="text-sm text-slate-700">{selectedReport.kecamatan}</p>
+                <p className="text-sm text-slate-700">{selectedReport.nama_kecamatan}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-400 uppercase font-bold">Deskripsi</p>
-                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi}</p>
+                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi_laporan}</p>
               </div>
             </div>
 

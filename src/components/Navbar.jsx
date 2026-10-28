@@ -26,7 +26,7 @@ function Navbar() {
               Beranda
             </Link>
             <Link 
-              to="/report" 
+              to="/report/form" 
               className="px-4 py-2 text-slate-600 hover:text-emerald-600 font-medium transition-colors"
             >
               Buat Laporan
@@ -69,7 +69,7 @@ function Navbar() {
               Beranda
             </Link>
             <Link
-              to="/report"
+              to="/report/form"
               className="block px-4 py-2 text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg font-medium transition-colors"
               onClick={() => setIsOpen(false)}
             >

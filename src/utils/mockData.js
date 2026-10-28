@@ -104,15 +104,19 @@ export const MOCK_FACILITY_CATEGORIES = [
   { id: 1, nama: "Jalan dan Jembatan", icon: "jalan", color: "orange" },
   { id: 2, nama: "Penerangan Jalan Umum (PJU)", icon: "pju", color: "amber" },
   { id: 3, nama: "Saluran Air dan Drainase", icon: "drainase", color: "cyan" },
-  { id: 4, nama: "Pengelolaan Sampah dan Kebersihan", icon: "taman", color: "emerald" },
+  { id: 4, nama: "Pengelolaan Sampah dan Kebersihan", icon: "sampah", color: "emerald" },
   { id: 5, nama: "Taman dan Ruang Terbuka Hijau (RTH)", icon: "taman", color: "emerald" },
-  { id: 6, nama: "Fasilitas Kesehatan", icon: "puskesmas", color: "blue" },
-  { id: 7, nama: "Fasilitas Pendidikan", icon: "sekolah", color: "violet" },
-  { id: 8, nama: "Rambu dan Marka Jalan", icon: "jalan", color: "orange" },
-  { id: 9, nama: "Transportasi Publik (Halte, Terminal)", icon: "pju", color: "amber" },
-  { id: 10, nama: "Fasilitas Olahraga dan Rekreasi", icon: "taman", color: "emerald" },
-  { id: 11, nama: "Pasar Tradisional", icon: "puskesmas", color: "blue" },
-  { id: 12, nama: "Tempat Ibadah", icon: "sekolah", color: "violet" },
+  { id: 6, nama: "Fasilitas Kesehatan", icon: "kesehatan", color: "blue" },
+  { id: 7, nama: "Fasilitas Pendidikan", icon: "pendidikan", color: "violet" },
+  { id: 8, nama: "Rambu dan Marka Jalan", icon: "rambu", color: "orange" },
+  { id: 9, nama: "Transportasi Publik (Halte, Terminal)", icon: "transportasi", color: "amber" },
+  { id: 10, nama: "Fasilitas Olahraga dan Rekreasi", icon: "olahraga", color: "emerald" },
+  { id: 11, nama: "Pasar Tradisional", icon: "pasar", color: "blue" },
+  { id: 12, nama: "Tempat Ibadah", icon: "ibadah", color: "violet" },
+  { id: 13, nama: "Fasilitas Pemerintahan dan Layanan Publik", icon: "pemerintah", color: "blue" },
+  { id: 14, nama: "Fasilitas Keamanan dan Keselamatan (Polisi, Damkar)", icon: "keamanan", color: "red" },
+  { id: 15, nama: "Pusat Perbelanjaan dan Fasilitas Ekonomi Modern", icon: "perbelanjaan", color: "pink" },
+  { id: 16, nama: "Lainnya", icon: "lainnya", color: "slate" },
 ];
 
 export const DETAILED_FACILITY_DATA = {
@@ -302,6 +306,67 @@ export const DETAILED_FACILITY_DATA = {
       { id: 2, nama: "Gereja Kristen Lamongan", lokasi: "Jl. Ahmad Yani", kecamatan: "Lamongan", latitude: -6.8950, longitude: 112.2170, kondisi: "Baik" },
       { id: 3, nama: "Masjid Nurul Hidayah", lokasi: "Jl. Pendidikan", kecamatan: "Sambirejo", latitude: -6.9126, longitude: 112.2843, kondisi: "Baik" },
       { id: 4, nama: "Vihara Gatama Bodhi", lokasi: "Jl. Merdeka", kecamatan: "Mantup", latitude: -6.9876, longitude: 112.3143, kondisi: "Baik" },
+    ]
+  },
+  13: {
+    id: 13,
+    nama: "Fasilitas Pemerintahan dan Layanan Publik",
+    deskripsi: "Fasilitas pemerintahan dan layanan publik adalah gedung-gedung dan kantor yang menyelenggarakan administrasi pemerintahan serta memberikan layanan publik kepada masyarakat Kabupaten Lamongan.",
+    sejarah: "Fasilitas pemerintahan di Lamongan berkembang sejalan dengan pembentukan Kabupaten Lamongan sebagai wilayah otonom. Gedung-gedung dinas dan kantor kelurahan/kecamatan dibangun bertahap untuk mendekatkan layanan kepada masyarakat.",
+    kondisi: "Baik",
+    jumlahUnit: "1 Bupati, 18 Kantor Camat, 27 Kantor Lurah, dan 25 Dinas/Unit Kerja",
+    thumbnail: "https://images.unsplash.com/photo-1488747807830-63789f68bb65?auto=format&fit=crop&q=80&w=600",
+    color: "blue",
+    fasilitas: [
+      { id: 1, nama: "Pemerintah Kabupaten Lamongan", lokasi: "Jl. Raya Lamongan", kecamatan: "Lamongan", latitude: -6.8938, longitude: 112.2140, kondisi: "Baik" },
+      { id: 2, nama: "Kantor Kecamatan Lamongan", lokasi: "Jl. Ahmad Yani", kecamatan: "Lamongan", latitude: -6.8950, longitude: 112.2170, kondisi: "Baik" },
+      { id: 3, nama: "Kantor Lurah Sukorame", lokasi: "Jl. Pendidikan", kecamatan: "Lamongan", latitude: -6.8960, longitude: 112.2180, kondisi: "Baik" },
+      { id: 4, nama: "Dinas PUPR Kabupaten Lamongan", lokasi: "Jl. Merdeka", kecamatan: "Lamongan", latitude: -6.8970, longitude: 112.2190, kondisi: "Baik" },
+    ]
+  },
+  14: {
+    id: 14,
+    nama: "Fasilitas Keamanan dan Keselamatan (Polisi, Damkar)",
+    deskripsi: "Fasilitas keamanan dan keselamatan meliputi kantor kepolisian, pos polisi, dan pemadam kebakaran yang menjamin keamanan dan ketertiban serta penanganan darurat kebakaran di Kabupaten Lamongan.",
+    sejarah: "Polres Lamongan didirikan sejak awal pembentukan kabupaten. Unit-unit kepolisian dan damkar terus ditambah seiring dengan pertumbuhan penduduk dan luas wilayah yang harus dilayani.",
+    kondisi: "Baik",
+    jumlahUnit: "1 Polres, 18 Polsek, 45 Polmas, dan 3 Unit Damkar",
+    thumbnail: "https://images.unsplash.com/photo-1578209614988-307e383011e3?auto=format&fit=crop&q=80&w=600",
+    color: "red",
+    fasilitas: [
+      { id: 1, nama: "Polres Lamongan", lokasi: "Jl. Raya Lamongan", kecamatan: "Lamongan", latitude: -6.8938, longitude: 112.2140, kondisi: "Baik" },
+      { id: 2, nama: "Polsek Lamongan", lokasi: "Jl. Ahmad Yani", kecamatan: "Lamongan", latitude: -6.8950, longitude: 112.2170, kondisi: "Baik" },
+      { id: 3, nama: "Damkar Lamongan", lokasi: "Jl. Sudirman", kecamatan: "Lamongan", latitude: -6.8960, longitude: 112.2180, kondisi: "Baik" },
+      { id: 4, nama: "Polsek Sambirejo", lokasi: "Jl. Pendidikan", kecamatan: "Sambirejo", latitude: -6.9126, longitude: 112.2843, kondisi: "Baik" },
+    ]
+  },
+  15: {
+    id: 15,
+    nama: "Pusat Perbelanjaan dan Fasilitas Ekonomi Modern",
+    deskripsi: "Pusat perbelanjaan dan fasilitas ekonomi modern meliputi mal, supermarket, dan pusat perdagangan modern yang mendukung aktivitas ekonomi dan menyediakan fasilitas belanja lengkap bagi masyarakat Kabupaten Lamongan.",
+    sejarah: "Pusat perbelanjaan modern di Lamongan mulai berkembang pada 2010-an dengan hadirnya minimarket berjenjang dan mal. Perkembangan ini mendukung pertumbuhan ekonomi lokal dan menciptakan lapangan kerja.",
+    kondisi: "Baik",
+    jumlahUnit: "2 Mal, 15 Supermarket/Minimarket Berjenjang, dan 8 Pusat Perdagangan Modern",
+    thumbnail: "https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=600",
+    color: "pink",
+    fasilitas: [
+      { id: 1, nama: "Lamongan Mall", lokasi: "Jl. Raya Lamongan", kecamatan: "Lamongan", latitude: -6.8938, longitude: 112.2140, kondisi: "Baik" },
+      { id: 2, nama: "Supermarket Indomaret Jl. Ahmad Yani", lokasi: "Jl. Ahmad Yani", kecamatan: "Lamongan", latitude: -6.8950, longitude: 112.2170, kondisi: "Baik" },
+      { id: 3, nama: "Alfamart Jl. Sudirman", lokasi: "Jl. Sudirman", kecamatan: "Lamongan", latitude: -6.8960, longitude: 112.2180, kondisi: "Baik" },
+      { id: 4, nama: "Pasar Modern Sambirejo", lokasi: "Jl. Pendidikan", kecamatan: "Sambirejo", latitude: -6.9126, longitude: 112.2843, kondisi: "Baik" },
+    ]
+  },
+  16: {
+    id: 16,
+    nama: "Lainnya",
+    deskripsi: "Kategori untuk fasilitas umum yang tidak termasuk dalam kategori-kategori spesifik di atas.",
+    sejarah: "Kategori ini disediakan untuk menampung laporan terkait fasilitas umum yang bersifat unik atau tidak tergolong dalam klasifikasi standar.",
+    kondisi: "Baik",
+    jumlahUnit: "Bervariasi",
+    thumbnail: "https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?auto=format&fit=crop&q=80&w=600",
+    color: "slate",
+    fasilitas: [
+      { id: 1, nama: "Fasilitas Umum Lainnya", lokasi: "Kabupaten Lamongan", kecamatan: "Lamongan", latitude: -6.8938, longitude: 112.2140, kondisi: "Baik" },
     ]
   }
 };

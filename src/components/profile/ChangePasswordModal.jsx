@@ -82,7 +82,7 @@ function ChangePasswordModal({ isOpen, onClose }) {
               name="oldPassword"
               value={formData.oldPassword}
               onChange={handleChange}
-              className="w-full px-4 py-2 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="button"
@@ -103,7 +103,7 @@ function ChangePasswordModal({ isOpen, onClose }) {
               name="newPassword"
               value={formData.newPassword}
               onChange={handleChange}
-              className="w-full px-4 py-2 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="button"
@@ -124,7 +124,7 @@ function ChangePasswordModal({ isOpen, onClose }) {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              className="w-full px-4 py-2 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-4 py-2 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
             <button
               type="button"
@@ -148,7 +148,7 @@ function ChangePasswordModal({ isOpen, onClose }) {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition disabled:opacity-50"
           >
             {loading ? 'Mengubah...' : 'Ubah Password'}
           </button>

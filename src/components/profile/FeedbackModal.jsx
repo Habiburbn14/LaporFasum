@@ -45,7 +45,7 @@ function FeedbackModal({ isOpen, onClose }) {
           <textarea
             required
             rows={4}
-            className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
+            className="w-full px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             placeholder="Tuliskan saran atau kendala Anda..."
             value={formData.pesan}
             onChange={(e) => setFormData(prev => ({ ...prev, pesan: e.target.value }))}
@@ -54,7 +54,7 @@ function FeedbackModal({ isOpen, onClose }) {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+          className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition disabled:opacity-50"
         >
           {loading ? 'Mengirim...' : 'Kirim Feedback'}
         </button>

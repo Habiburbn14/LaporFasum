@@ -1,6 +1,14 @@
 import React from 'react';
 
 function WeeklyChart({ data, width = 320, height = 120 }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-24 flex items-center justify-center bg-slate-50 rounded-xl">
+        <span className="text-xs text-slate-400">Tidak ada data</span>
+      </div>
+    );
+  }
+
   const padding = 12;
   const values = data.map((d) => d.value);
   const max = Math.max(...values);
@@ -8,7 +16,9 @@ function WeeklyChart({ data, width = 320, height = 120 }) {
   const range = max - min || 1;
 
   const points = data.map((d, i) => {
-    const x = padding + (i / (data.length - 1)) * (width - padding * 2);
+    const x = data.length === 1 
+      ? width / 2 
+      : padding + (i / (data.length - 1)) * (width - padding * 2);
     const y = height - padding - ((d.value - min) / range) * (height - padding * 2);
     return { x, y };
   });

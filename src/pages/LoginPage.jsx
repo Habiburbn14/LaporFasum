@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { loginUser } from '../services/authApi';
+import { useAuthStore } from '../stores/useAuthStore';
 import toast from 'react-hot-toast';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuthStore();
   const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,24 +20,22 @@ function LoginPage() {
     }
 
     setLoading(true);
-    const result = await loginUser(formData.identifier, formData.identifier, formData.password, false);
+    const result = await loginUser(formData.identifier, formData.password);
     setLoading(false);
 
     if (result.success) {
       toast.success('Login Berhasil');
-      navigate('/');
+      await login(result.token, result.user);
+      navigate('/', { replace: true });
     } else {
       toast.error(result.error || 'Login gagal');
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col justify-between p-5 pb-10">
+    <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto flex flex-col justify-between p-5 pb-10">
       <div>
-        <div className="flex items-center justify-between mt-4 mb-8">
-          <Link to="/" className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
+        <div className="flex items-center justify-center mt-4 mb-8">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
               L
@@ -81,7 +81,7 @@ function LoginPage() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 required
-                placeholder="••••••••"
+                placeholder="••••••"
                 className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"
                 value={formData.password}
                 onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
@@ -110,18 +110,13 @@ function LoginPage() {
           <Link to="/register" className="inline-block w-full py-3 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-50 font-medium rounded-xl transition">
             Daftar Akun di Sini
           </Link>
-          
-          <div className="pt-2">
-            <Link to="/admin-login" className="text-xs text-slate-500 hover:text-blue-600 hover:underline">
-              Masuk sebagai Admin?
-            </Link>
-          </div>
+          <p className="text-sm text-slate-500 pt-2">Login sebagai Admin?</p>
+          <Link to="/admin-login" className="inline-block w-full py-3 bg-white border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-medium rounded-xl transition">
+            Masuk Admin
+          </Link>
         </div>
       </div>
-
-      <div className="text-center mt-6">
-        <p className="text-xs text-slate-400">Pemerintah Kabupaten Lamongan</p>
-      </div>
+      
     </div>
   );
 }

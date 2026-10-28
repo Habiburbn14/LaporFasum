@@ -112,7 +112,7 @@ function AvatarUploadModal({ isOpen, onClose, currentAvatar, onUpdate }) {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-1 px-4 py-2 bg-emerald-600 text-white rounded-xl font-medium hover:bg-emerald-700 transition disabled:opacity-50"
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition disabled:opacity-50"
           >
             {loading ? 'Menyimpan...' : 'Simpan Foto'}
           </button>

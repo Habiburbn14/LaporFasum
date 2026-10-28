@@ -1,28 +1,48 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Search } from 'lucide-react';
 import {
-  Building2, GraduationCap, Route as RouteIcon, Lightbulb, Waves, Trees,
+  ArrowLeft, Search, Route, Lightbulb, Waves, Trees, Building2,
+  GraduationCap, Navigation, Bus, Dumbbell, Store, Church,
+  Landmark, Shield, ShoppingBag, LayoutGrid
 } from 'lucide-react';
 import BottomNav from '../components/mobile/BottomNav';
-import { MOCK_FACILITY_CATEGORIES } from '../utils/mockData';
+
+const FACILITY_CATEGORIES = [
+  { id: 1,  nama: 'Jalan dan Jembatan', icon: 'jalan', color: 'orange' },
+  { id: 2,  nama: 'Penerangan Jalan Umum (PJU)', icon: 'pju', color: 'amber' },
+  { id: 3,  nama: 'Saluran Air dan Drainase', icon: 'drainase', color: 'cyan' },
+  { id: 4,  nama: 'Pengelolaan Sampah dan Kebersihan', icon: 'sampah', color: 'emerald' },
+  { id: 5,  nama: 'Taman dan Ruang Terbuka Hijau (RTH)', icon: 'taman', color: 'emerald' },
+  { id: 6,  nama: 'Fasilitas Kesehatan', icon: 'kesehatan', color: 'blue' },
+  { id: 7,  nama: 'Fasilitas Pendidikan', icon: 'pendidikan', color: 'violet' },
+  { id: 8,  nama: 'Rambu dan Marka Jalan', icon: 'rambu', color: 'orange' },
+  { id: 9,  nama: 'Transportasi Publik (Halte, Terminal)', icon: 'transportasi', color: 'amber' },
+  { id: 10, nama: 'Fasilitas Olahraga dan Rekreasi', icon: 'olahraga', color: 'emerald' },
+  { id: 11, nama: 'Pasar Tradisional', icon: 'pasar', color: 'blue' },
+  { id: 12, nama: 'Tempat Ibadah', icon: 'ibadah', color: 'violet' },
+  { id: 13, nama: 'Fasilitas Pemerintahan dan Layanan Publik', icon: 'pemerintah', color: 'blue' },
+  { id: 14, nama: 'Fasilitas Keamanan dan Keselamatan (Polisi, Damkar)', icon: 'keamanan', color: 'red' },
+  { id: 15, nama: 'Pusat Perbelanjaan dan Fasilitas Ekonomi Modern', icon: 'perbelanjaan', color: 'pink' },
+  { id: 16, nama: 'Lainnya', icon: 'lainnya', color: 'slate' },
+];
 
 const CATEGORY_ICONS = {
-  puskesmas: Building2,
-  sekolah: GraduationCap,
-  jalan: RouteIcon,
+  jalan: Route,
   pju: Lightbulb,
   drainase: Waves,
+  sampah: Waves,
   taman: Trees,
-};
-
-const CATEGORY_COLORS = {
-  blue: 'bg-blue-50 text-blue-600',
-  violet: 'bg-violet-50 text-violet-600',
-  orange: 'bg-orange-50 text-orange-600',
-  amber: 'bg-amber-50 text-amber-600',
-  cyan: 'bg-cyan-50 text-cyan-600',
-  emerald: 'bg-emerald-50 text-emerald-600',
+  kesehatan: Building2,
+  pendidikan: GraduationCap,
+  rambu: Navigation,
+  transportasi: Bus,
+  olahraga: Dumbbell,
+  pasar: Store,
+  ibadah: Church,
+  pemerintah: Landmark,
+  keamanan: Shield,
+  perbelanjaan: ShoppingBag,
+  lainnya: LayoutGrid,
 };
 
 const CATEGORY_BG = {
@@ -32,18 +52,21 @@ const CATEGORY_BG = {
   amber: 'from-amber-500 to-amber-600',
   cyan: 'from-cyan-500 to-cyan-600',
   emerald: 'from-emerald-500 to-emerald-600',
+  red: 'from-red-500 to-red-600',
+  pink: 'from-pink-500 to-pink-600',
+  slate: 'from-slate-500 to-slate-600',
 };
 
 function FacilityCategoriesPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredCategories = MOCK_FACILITY_CATEGORIES.filter((cat) =>
+  const filteredCategories = FACILITY_CATEGORIES.filter((cat) =>
     cat.nama.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28">
-      <header className="bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 px-5 pt-6 pb-8 rounded-b-3xl relative overflow-hidden">
+    <div className="min-h-screen bg-slate-50 max-w-107.5 mx-auto pb-28">
+      <header className="bg-linear-to-br from-blue-600 via-blue-600 to-violet-600 px-5 pt-6 pb-8 rounded-b-3xl relative overflow-hidden">
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full" />
         <div className="absolute bottom-0 left-10 w-24 h-24 bg-white/5 rounded-full" />
 
@@ -81,7 +104,7 @@ function FacilityCategoriesPage() {
         {filteredCategories.length > 0 ? (
           <div className="grid grid-cols-2 gap-4">
             {filteredCategories.map((cat) => {
-              const Icon = CATEGORY_ICONS[cat.icon];
+              const Icon = CATEGORY_ICONS[cat.icon] || LayoutGrid;
               return (
                 <Link
                   key={cat.id}
@@ -89,7 +112,7 @@ function FacilityCategoriesPage() {
                   className="group"
                 >
                   <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-blue-200 transition-all duration-300">
-                    <div className={`bg-gradient-to-br ${CATEGORY_BG[cat.color]} p-6 flex items-center justify-center h-32 relative overflow-hidden`}>
+                    <div className={`bg-linear-to-br ${CATEGORY_BG[cat.color]} p-6 flex items-center justify-center h-32 relative overflow-hidden`}>
                       <div className="absolute top-0 right-0 w-20 h-20 bg-white/10 rounded-full -mr-10 -mt-10" />
                       <Icon className="w-12 h-12 text-white relative z-10" />
                     </div>

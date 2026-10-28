@@ -206,7 +206,7 @@ function CustomMap({ reports, activeLayers, baseMap, onMarkerClick, selectedRepo
         className: 'custom-marker',
       });
 
-      const marker = L.marker([report.latitude, report.longitude], { icon: markerIcon });
+      const marker = L.marker([report.lat, report.lng], { icon: markerIcon });
       marker.on('click', () => onMarkerClick(report));
       marker.addTo(map);
       markersRef.current.push(marker);
@@ -218,7 +218,7 @@ function CustomMap({ reports, activeLayers, baseMap, onMarkerClick, selectedRepo
     if (!mapInstanceRef.current || !selectedReport) return;
 
     const map = mapInstanceRef.current;
-    map.setView([selectedReport.latitude, selectedReport.longitude], 14, {
+    map.setView([selectedReport.lat, selectedReport.lng], 14, {
       animate: true,
     });
   }, [selectedReport]);

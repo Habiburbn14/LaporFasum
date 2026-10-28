@@ -11,6 +11,7 @@ const CATEGORY_BG = {
   amber: 'from-amber-500 to-amber-600',
   cyan: 'from-cyan-500 to-cyan-600',
   emerald: 'from-emerald-500 to-emerald-600',
+  slate: 'from-slate-500 to-slate-600',
 };
 
 const STATUS_CONFIG = {
@@ -67,14 +68,6 @@ function FacilityDetailPage() {
           </p>
         </div>
       </header>
-
-      <div className="px-5 -mt-8">
-        <img
-          src={facility.thumbnail}
-          alt={facility.nama}
-          className="w-full h-48 object-cover rounded-2xl shadow-lg"
-        />
-      </div>
 
       <div className="px-5 mt-6">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">

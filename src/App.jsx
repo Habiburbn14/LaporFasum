@@ -1,26 +1,30 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import SplashScreen from './components/ui/SplashScreen';
 import HomePage from './pages/HomePage';
-import ReportPage from './pages/ReportPage';
+import FormStepPage from './pages/report/FormStepPage';
+import PreviewStepPage from './pages/report/PreviewStepPage';
+import SuccessStepPage from './pages/report/SuccessStepPage';
 import TrackingPage from './pages/TrackingPage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardAdminMaster from './pages/DashboardAdminMaster';
+import FacilityCategoriesPage from './pages/FacilityCategoriesPage';
+import FacilityDetailPage from './pages/FacilityDetailPage';
 import TriageReportsPage from './pages/TriageReportsPage';
 import GISMapViewPage from './pages/GISMapViewPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
-import FacilityCategoriesPage from './pages/FacilityCategoriesPage';
-import FacilityDetailPage from './pages/FacilityDetailPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
 
 function App() {
   return (
-    <Router>
+    <div>
+      <SplashScreen duration={3000} />
       <Toaster
         position="top-center"
         toastOptions={{
@@ -47,7 +51,11 @@ function App() {
         }}
       />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={
+          <ProtectedRoute>
+            <HomePage />
+          </ProtectedRoute>
+        } />
         <Route path="/login" element={
           <PublicRoute>
             <LoginPage />
@@ -60,9 +68,19 @@ function App() {
         } />
         <Route path="/admin-login" element={<AdminLoginPage />} />
         
-        <Route path="/report" element={
+        <Route path="/report/form" element={
           <ProtectedRoute>
-            <ReportPage />
+            <FormStepPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/report/preview" element={
+          <ProtectedRoute>
+            <PreviewStepPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/report/success" element={
+          <ProtectedRoute>
+            <SuccessStepPage />
           </ProtectedRoute>
         } />
         <Route path="/tracking" element={
@@ -78,6 +96,21 @@ function App() {
         <Route path="/admin/master" element={
           <ProtectedRoute>
             <DashboardAdminMaster />
+          </ProtectedRoute>
+        } />
+        <Route path="/fasilitas" element={
+          <ProtectedRoute>
+            <FacilityCategoriesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/fasilitas/:id" element={
+          <ProtectedRoute>
+            <FacilityDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/map" element={
+          <ProtectedRoute>
+            <GISMapViewPage />
           </ProtectedRoute>
         } />
         <Route path="/admin/triage" element={
@@ -100,18 +133,8 @@ function App() {
             <SettingsPage />
           </ProtectedRoute>
         } />
-        <Route path="/fasilitas" element={
-          <ProtectedRoute>
-            <FacilityCategoriesPage />
-          </ProtectedRoute>
-        } />
-        <Route path="/fasilitas/:id" element={
-          <ProtectedRoute>
-            <FacilityDetailPage />
-          </ProtectedRoute>
-        } />
       </Routes>
-    </Router>
+    </div>
   );
 }
 

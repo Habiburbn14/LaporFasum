@@ -51,15 +51,9 @@ function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto flex flex-col justify-between p-5 pb-10 relative">
-      <Link to="/login" className="fixed top-5 right-5 p-2 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition z-10" title="Back to Login">
-        <ArrowLeft className="w-5 h-5" />
-      </Link>
 
       <div>
-        <div className="flex items-center justify-between mt-4 mb-8">
-          <Link to="/login" className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
+        <div className="flex items-center justify-center mt-4 mb-8">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
               L
@@ -103,7 +97,7 @@ function RegisterPage() {
                 <ShieldAlert className="w-4.5 h-4.5" />
               </span>
               <input
-                type={showNik ? 'text' : 'password'}
+                type="number"
                 required
                 placeholder="3524XXXXXXXXXX"
                 className="w-full pl-11 pr-11 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 transition"
