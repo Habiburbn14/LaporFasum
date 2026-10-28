@@ -3,6 +3,7 @@ const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const api = axios.create({
   baseURL: `${BASE_URL}`,
+  timeout: 15000,
 });
 
 api.interceptors.request.use((config) => {
@@ -19,6 +20,31 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-retry 1x on network error or timeout
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    // Never retry cancelled requests
+    if (axios.isCancel(error) || error.code === 'ERR_CANCELED') {
+      return Promise.reject(error);
+    }
+    if (!config || config._retry) {
+      return Promise.reject(error);
+    }
+    // Retry on network errors or 5xx server errors
+    if (error.code === 'ECONNABORTED' || !error.response || (error.response.status >= 500 && error.response.status < 600)) {
+      config._retry = true;
+      try {
+        return await api(config);
+      } catch (retryError) {
+        return Promise.reject(retryError);
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 // export const authAPI = {
 //   login: (email, password) => api.post('/auth/login', { email, password }),
 //   register: (data) => api.post('/auth/register', data),
@@ -27,9 +53,22 @@ api.interceptors.request.use((config) => {
 export const laporanAPI = {
   create: (data) =>
     api.post('/laporan', data),
-  list: (filters) => api.get('/laporan', { params: filters }),
+  list: (filters, config) => api.get('/laporan', { ...config, params: filters }),
   getById: (id) => api.get(`/laporan/${id}`),
-  updateStatus: (id, status, tanggapan) => api.put(`/laporan/${id}/status`, { status, tanggapan }),
+  updateStatus: (id, status, tanggapan, kewenangan) => {
+    const formData = new FormData();
+    formData.append('id_laporan', id);
+    formData.append('status_terkini', status);
+    if (tanggapan !== undefined && tanggapan !== null) {
+      formData.append('tanggapan_admin', tanggapan);
+    }
+    if (kewenangan !== undefined && kewenangan !== null && kewenangan !== '') {
+      formData.append('kewenangan_penanganan', kewenangan);
+    }
+    return api.put(`/laporan/${id}/status`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 };
 
 export const trackingAPI = {
@@ -38,8 +77,27 @@ export const trackingAPI = {
 };
 
 export const adminAPI = {
-  getDashboard: () => api.get('/admin/dashboard'),
-  updateStatus: (id, status, tanggapan) => api.put(`/admin/laporan/${id}/status`, { status, tanggapan }),
+  getDashboard: () => api.get(`/dashboard/admin?_t=${Date.now()}`, {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    }
+  }),
+  updateStatus: (id, status, tanggapan, kewenangan) => {
+    const formData = new FormData();
+    formData.append('id_laporan', id);
+    formData.append('status_terkini', status);
+    if (tanggapan !== undefined && tanggapan !== null) {
+      formData.append('tanggapan_admin', tanggapan);
+    }
+    if (kewenangan !== undefined && kewenangan !== null && kewenangan !== '') {
+      formData.append('kewenangan_penanganan', kewenangan);
+    }
+    return api.put(`/admin/laporan/${id}/status`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 };
 
 export const masterAPI = {

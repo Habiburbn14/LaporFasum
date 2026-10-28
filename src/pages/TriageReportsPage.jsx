@@ -1,56 +1,83 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut,
   Search, Bell, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/useAuthStore';
+import { useLaporanList } from '../hooks/useLaporanList';
 import { laporanAPI } from '../services/api';
+import { getErrorMessage } from '../utils/error';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
-import { getErrorMessage } from '../utils/error';
 
 function TriageReportsPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const [reports, setReports] = useState([]);
+  const { reports, setReports, loading, error, reload } = useLaporanList();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [selectedReport, setSelectedReport] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const loadReports = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const res = await laporanAPI.list({});
-      setReports(res.data.data);
-    } catch (err) {
-      console.error('Error loading reports:', err);
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadReports();
-  }, []);
+  const [actionReport, setActionReport] = useState(null);
+  const [actionType, setActionType] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const filteredReports = reports.filter(r => {
-    const matchSearch = searchTerm === '' || 
-      String(r.ticket_code).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.judul.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.pelapor.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = searchTerm.toLowerCase();
+    const matchSearch = searchTerm === '' ||
+      String(r.id_laporan || r.ticket_code || '').toLowerCase().includes(term) ||
+      String(r.judul_laporan || r.judul || '').toLowerCase().includes(term) ||
+      String(r.nama_lengkap || r.pelapor || '').toLowerCase().includes(term);
     
     const matchStatus = filterStatus === '' || r.status_terkini === filterStatus;
     return matchSearch && matchStatus;
   });
 
-  const handleStatusChange = (id, newStatus) => {
-    setReports(reports.map(r => r.id === id ? { ...r, status: newStatus } : r));
+  const reportId = (r) => r.id_laporan || r.ticket_code || r.id;
+
+  const openAction = (report, type) => {
+    setActionReport(report);
+    setActionType(type);
+    setRejectReason('');
+  };
+
+  const closeAction = () => {
+    setActionReport(null);
+    setActionType(null);
+    setRejectReason('');
+  };
+
+  const confirmAction = async () => {
+    if (!actionReport) return;
+    const isReject = actionType === 'reject';
+    if (isReject && !rejectReason.trim()) {
+      toast.error('Alasan penolakan wajib diisi');
+      return;
+    }
+
+    const id = reportId(actionReport);
+    const newStatus = isReject ? 'Ditolak' : 'Diterima';
+    const reason = isReject ? rejectReason.trim() : undefined;
+    const kewenangan = isReject ? 'Dinas PU' : null; // null untuk Terima, default untuk Tolak
+
+    setSubmitting(true);
+    try {
+      await laporanAPI.updateStatus(id, newStatus, reason, kewenangan);
+      setReports(prev => prev.map(r =>
+        reportId(r) === id
+          ? { ...r, status: newStatus, status_terkini: newStatus, ...(isReject ? { tanggapan: reason } : {}) }
+          : r
+      ));
+      toast.success(isReject ? 'Laporan ditolak' : 'Laporan diterima');
+      closeAction();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleLogout = () => {
@@ -58,15 +85,16 @@ function TriageReportsPage() {
     navigate('/admin-login');
   };
 
-  if (loading) return <LoadingScreen message="Memuat triage reports..." className="bg-slate-100" />;
+  if (loading && reports.length === 0) return <LoadingScreen message="Memuat triage reports..." className="bg-slate-100" />;
 
-  if (error) return <ErrorState message={error} onRetry={loadReports} className="bg-slate-100" />;
+  if (error && reports.length === 0) return <ErrorState message={error} onRetry={reload} className="bg-slate-100" />;
 
   const getStatusColor = (status) => {
     switch(status) {
       case 'Menunggu Verifikasi': return 'bg-amber-50 text-amber-700';
       case 'Diterima': return 'bg-blue-50 text-blue-700';
       case 'Selesai': return 'bg-emerald-50 text-emerald-700';
+      case 'Ditolak': return 'bg-red-50 text-red-700';
       default: return 'bg-slate-50 text-slate-700';
     }
   };
@@ -76,6 +104,7 @@ function TriageReportsPage() {
       case 'Menunggu Verifikasi': return 'bg-amber-500';
       case 'Diterima': return 'bg-blue-500';
       case 'Selesai': return 'bg-emerald-500';
+      case 'Ditolak': return 'bg-red-500';
       default: return 'bg-slate-500';
     }
   };
@@ -180,6 +209,7 @@ function TriageReportsPage() {
               <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
               <option value="Diterima">Diterima</option>
               <option value="Selesai">Selesai</option>
+              <option value="Ditolak">Ditolak</option>
             </select>
           </div>
 
@@ -200,7 +230,7 @@ function TriageReportsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {filteredReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={report.id_laporan || report.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-4 px-6 font-semibold text-blue-600">{report.id_laporan}</td>
                       <td className="py-4 px-6">
                         <p className="font-medium text-slate-800">{report.nama_lengkap}</p>
@@ -213,22 +243,29 @@ function TriageReportsPage() {
                       </td>
                       <td className="py-4 px-6 text-xs text-slate-600">{new Date(report.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(report.status_terkini)}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(report.status_terkini)}`} />
-                          {report.status}
+                          {report.status_terkini || '-'}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
                         <div className="inline-flex items-center gap-2">
-                          <select
-                            value={report.status}
-                            onChange={(e) => handleStatusChange(report.id_laporan, e.target.value)}
-                            className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500"
+                          <button
+                            onClick={() => openAction(report, 'accept')}
+                            disabled={report.status_terkini === 'Diterima'}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-50"
                           >
-                            <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
-                            <option value="Diterima">Diterima</option>
-                            <option value="Selesai">Selesai</option>
-                          </select>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Terima
+                          </button>
+                          <button
+                            onClick={() => openAction(report, 'reject')}
+                            disabled={report.status_terkini === 'Ditolak'}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            Tolak
+                          </button>
                           <button 
                             onClick={() => setSelectedReport(report)}
                             className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
@@ -253,7 +290,7 @@ function TriageReportsPage() {
 
       {/* Detail Modal */}
       {selectedReport && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1500] p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.id_laporan}</h3>
@@ -296,6 +333,80 @@ function TriageReportsPage() {
                 className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-medium hover:bg-slate-800"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Konfirmasi Terima / Tolak */}
+      {actionReport && (
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1500] p-4"
+          onClick={() => !submitting && closeAction()}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${
+                actionType === 'reject' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'
+              }`}>
+                {actionType === 'reject' ? <AlertCircle className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-lg">
+                  {actionType === 'reject' ? 'Tolak Laporan' : 'Terima Laporan'}
+                </h3>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {actionType === 'reject'
+                    ? 'Laporan akan ditandai sebagai Ditolak. Berikan alasan penolakan.'
+                    : 'Laporan akan diverifikasi dan ditandai sebagai Diterima.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-3.5">
+              <p className="text-sm font-semibold text-slate-800 truncate">{actionReport.judul_laporan || 'Tanpa Judul'}</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                <span className="font-mono text-blue-600 font-medium">{reportId(actionReport)}</span>
+                {' · '}{actionReport.nama_lengkap || '-'}
+              </p>
+            </div>
+
+            {actionType === 'reject' && (
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">
+                  Alasan Penolakan
+                </label>
+                <textarea
+                  rows={4}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Tuliskan alasan mengapa laporan ini ditolak..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-700 outline-none resize-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={closeAction}
+                disabled={submitting}
+                className="flex-1 py-3 border border-slate-300 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmAction}
+                disabled={submitting || (actionType === 'reject' && !rejectReason.trim())}
+                className={`flex-1 py-3 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  actionType === 'reject' ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+              >
+                {submitting ? 'Memproses...' : (actionType === 'reject' ? 'Tolak Laporan' : 'Terima Laporan')}
               </button>
             </div>
           </div>

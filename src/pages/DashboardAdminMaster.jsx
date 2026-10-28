@@ -5,51 +5,87 @@ import {
 } from 'lucide-react';
 import { MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART } from '../utils/mockData';
 import WeeklyChart from '../components/mobile/WeeklyChart';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
-import { laporanAPI } from '../services/api';
+import { useLaporanList } from '../hooks/useLaporanList';
+import { laporanAPI, masterAPI, adminAPI } from '../services/api';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
-import { getErrorMessage } from '../utils/error';
 
 function DashboardAdminMaster() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const [reports, setReports] = useState([]);
+  const { reports, loading, error, reload } = useLaporanList();
   const [searchCategory, setSearchCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const [lamonganBoundary, setLamonganBoundary] = useState(null);
+  const [chartLoading, setChartLoading] = useState(true);
+  const [timeRange, setTimeRange] = useState('mingguan');
 
-  const loadReports = async () => {
+  // Fetch chart data from backend
+  const fetchChartData = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const res = await laporanAPI.list({});
-      setReports(res.data.data);
+      setChartLoading(true);
+      
+      // Try admin dashboard first, fall back to analytics
+      let res;
+      try {
+        res = await adminAPI.getDashboard();
+      } catch {
+        res = await masterAPI.getAnalytics();
+      }
+
+      const data = res.data?.data || res.data;
+      
+      // Transform API data to WeeklyChart format: [{label, value}, ...]
+      const transformToChartFormat = (arr) => {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(item => ({
+          label: item.label || item.tanggal || item.periode || item.hari || item.bulan || item.nama || '',
+          value: Number(item.value || item.jumlah || item.total || item.count || 0)
+        })).filter(item => item.label && !isNaN(item.value));
+      };
+
+      if (data) {
+        console.log('Dashboard API response:', data);
+        const mingguan = transformToChartFormat(data.statistik_harian || data.statistik_mingguan || data.chart_data || data.grafik || []);
+        const bulanan = transformToChartFormat(data.statistik_bulanan || data.statistik_mingguan || data.chart_data || data.grafik || []);
+
+        console.log('Transformed mingguan:', mingguan);
+        console.log('Transformed bulanan:', bulanan);
+
+        if (mingguan.length > 0 || bulanan.length > 0) {
+          setChartData({ mingguan, bulanan });
+        }
+      }
     } catch (err) {
-      console.error('Error loading reports:', err);
-      setError(getErrorMessage(err));
+      console.error('Error loading chart data:', err);
     } finally {
-      setLoading(false);
+      setChartLoading(false);
+    }
+  };
+
+  // Fetch Lamongan boundary
+  const fetchLamonganBoundary = async () => {
+    try {
+      const response = await fetch('/lamongan.geojson');
+      if (!response.ok) throw new Error('Gagal memuat batas wilayah');
+      const data = await response.json();
+      setLamonganBoundary(data);
+    } catch (err) {
+      console.error('Error loading Lamongan boundary:', err);
     }
   };
 
   useEffect(() => {
-    loadReports();
+    fetchChartData();
+    fetchLamonganBoundary();
   }, []);
-
-  // Stats calculation
-  const stats = {
-    total: reports.length,
-    menunggu: reports.filter(r => r.status === 'Menunggu Verifikasi').length,
-    diproses: reports.filter(r => r.status === 'Diterima').length,
-    selesai: reports.filter(r => r.status === 'Selesai').length,
-  };
 
   // Filter reports
   const filteredReports = reports.filter(r => {
@@ -60,18 +96,27 @@ function DashboardAdminMaster() {
 
   const displayedReports = showAll ? filteredReports : filteredReports.slice(0, 10);
 
-  const handleStatusChange = (id, newStatus) => {
-    setReports(reports.map(r => r.id === id ? { ...r, status: newStatus } : r));
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/admin-login');
   };
 
-  if (loading) return <LoadingScreen message="Memuat dashboard..." />;
+  if (loading && reports.length === 0) return <LoadingScreen message="Memuat dashboard..." />;
 
-  if (error) return <ErrorState message={error} onRetry={loadReports} />;
+  if (error && reports.length === 0) return <ErrorState message={error} onRetry={reload} />;
+
+  // Stats calculation
+  const stats = {
+    total: reports.length,
+    menunggu: reports.filter(r => r.status === 'Menunggu Verifikasi').length,
+    diproses: reports.filter(r => r.status === 'Diterima').length,
+    selesai: reports.filter(r => r.status === 'Selesai').length,
+  };
+
+  const getCurrentChartData = () => {
+    if (!chartData) return MOCK_WEEKLY_CHART;
+    return timeRange === 'mingguan' ? chartData.mingguan : chartData.bulanan;
+  };
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
@@ -212,12 +257,32 @@ function DashboardAdminMaster() {
                   <p className="text-xs text-slate-500 mt-0.5">Statistik pengaduan infrastruktur di Kabupaten Lamongan</p>
                 </div>
                 <div className="flex bg-slate-100 rounded-full p-1">
-                  <button className="text-xs font-medium px-3 py-1 rounded-full bg-white text-blue-600 shadow-sm">Mingguan</button>
-                  <button className="text-xs font-medium px-3 py-1 rounded-full text-slate-500">Bulanan</button>
+                  <button 
+                    onClick={() => setTimeRange('mingguan')}
+                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${
+                      timeRange === 'mingguan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    Mingguan
+                  </button>
+                  <button 
+                    onClick={() => setTimeRange('bulanan')}
+                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${
+                      timeRange === 'bulanan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    Bulanan
+                  </button>
                 </div>
               </div>
               <div className="h-64 flex items-center justify-center">
-                <WeeklyChart data={MOCK_WEEKLY_CHART} width={600} height={200} />
+                {chartLoading ? (
+                  <div className="w-full h-full flex items-center justify-center text-slate-400">
+                    <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <WeeklyChart data={getCurrentChartData()} width={600} height={200} />
+                )}
               </div>
             </div>
 
@@ -232,22 +297,35 @@ function DashboardAdminMaster() {
               </div>
               <div className="flex-1 rounded-xl overflow-hidden min-h-[220px] relative border border-slate-200">
                 <MapContainer 
-                  center={[-6.8938, 112.2140]} 
+                  center={[-7.169249504786527, 112.33849173392773]} 
                   zoom={11} 
                   style={{ height: '100%', width: '100%' }}
                   zoomControl={false}
+                  attributionControl={false}
+                  whenCreated={(map) => { window.mapRef = map; }}
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  {reports.map((r) => (
-                    <Marker key={r.id || r.id_laporan} position={[r.latitude, r.longitude]}>
-                      <Popup>
-                        <div className="text-xs">
-                          <p className="font-bold">{r.ticket_code}</p>
-                          <p>{r.judul}</p>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  ))}
+                  
+                  {lamonganBoundary && (
+                    <GeoJSON
+                      data={lamonganBoundary}
+                      style={{
+                        color: '#ef4444',
+                        weight: 2,
+                        opacity: 1,
+                        fillColor: '#ef4444',
+                        fillOpacity: 0.15,
+                        lineCap: 'round',
+                        lineJoin: 'round',
+                      }}
+                      onEachFeature={(feature, layer) => {
+                        if (window.mapRef) {
+                          const bounds = layer.getBounds();
+                          window.mapRef.fitBounds(bounds, { padding: [20, 20], maxZoom: 12 });
+                        }
+                      }}
+                    />
+                  )}
                 </MapContainer>
               </div>
             </div>
@@ -330,24 +408,14 @@ function DashboardAdminMaster() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <div className="inline-flex items-center gap-2">
-                          <select
-                            value={report.status}
-                            onChange={(e) => handleStatusChange(report.id, e.target.value)}
-                            className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="Menunggu Verifikasi">Menunggu Verifikasi</option>
-                            <option value="Diterima">Diterima</option>
-                            <option value="Selesai">Selesai</option>
-                          </select>
-                          <button 
-                            onClick={() => setSelectedReport(report)}
-                            className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
-                            title="Lihat Detail"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => setSelectedReport(report)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium transition-colors"
+                          title="Lihat Detail"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Detail
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -371,43 +439,107 @@ function DashboardAdminMaster() {
 
       {/* Detail Modal */}
       {selectedReport && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.id_laporan}</h3>
-              <button 
+        <div
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1500] p-4 sm:p-6"
+          onClick={() => setSelectedReport(null)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <header className="flex items-start justify-between gap-6 px-6 py-5 border-b border-slate-200 shrink-0">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Detail Laporan</span>
+                  <span className="text-slate-300">·</span>
+                  <span className="text-xs font-semibold font-mono text-blue-600">
+                    {selectedReport.id_laporan || selectedReport.ticket_code || '-'}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 leading-snug mt-1 break-words">
+                  {selectedReport.judul_laporan || 'Tanpa Judul'}
+                </h3>
+              </div>
+              <button
                 onClick={() => setSelectedReport(null)}
-                className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+                className="shrink-0 w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
+                title="Tutup"
               >
                 ✕
               </button>
-            </div>
-            
-            <div className="space-y-3">
-              <img src={selectedReport.foto_bukti} alt="Bukti" className="w-full h-48 object-cover rounded-xl" />
-              <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Judul & Kategori</p>
-                <p className="font-semibold text-slate-800 text-sm">{selectedReport.judul_laporaan}</p>
-                <p className="text-xs text-blue-600 font-medium">{selectedReport.id_kategori}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Lokasi & Kecamatan</p>
-                <p className="text-sm text-slate-700">{selectedReport.nama_kecamatan}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Deskripsi</p>
-                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi_laporan}</p>
+            </header>
+
+            {/* Body: foto di kiri, detail di kanan */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[420px_minmax(0,1fr)]">
+                <div className="bg-slate-100 p-4 md:p-5 border-b md:border-b-0 md:border-r border-slate-200">
+                  {selectedReport.foto_bukti ? (
+                    <img
+                      src={selectedReport.foto_bukti}
+                      alt="Foto bukti laporan"
+                      className="w-full h-auto rounded-xl border border-slate-200 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-full h-64 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-400">
+                      <AlertCircle className="w-7 h-7" />
+                      <span className="text-xs font-medium">Foto tidak tersedia</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6 space-y-6">
+                  <div className="flex items-center gap-2 flex-wrap border-b border-slate-100 pb-5">
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                        STATUS_BADGE[selectedReport.status_terkini || selectedReport.status] || 'bg-slate-100 text-slate-600 border border-slate-200'
+                      }`}
+                    >
+                      {selectedReport.status_terkini || selectedReport.status || '-'}
+                    </span>
+                    {(selectedReport.nama_kategori || selectedReport.id_kategori) && (
+                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                        {selectedReport.nama_kategori || selectedReport.id_kategori}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                    <InfoItem label="Pelapor" value={selectedReport.nama_lengkap} />
+                    <InfoItem label="Kecamatan" value={selectedReport.nama_kecamatan} />
+                    <InfoItem
+                      label="Tanggal Laporan"
+                      value={
+                        selectedReport.created_at
+                          ? new Date(selectedReport.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                          : ''
+                      }
+                    />
+                    <InfoItem
+                      label="Waktu Diperbarui"
+                      value={selectedReport.updated_at ? new Date(selectedReport.updated_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : ''}
+                    />
+                  </div>
+
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Deskripsi</p>
+                    <p className="text-sm leading-relaxed text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      {selectedReport.deskripsi_laporan || 'Tidak ada deskripsi untuk laporan ini.'}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
+            {/* Footer */}
+            <footer className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end shrink-0">
               <button
                 onClick={() => setSelectedReport(null)}
-                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-medium hover:bg-slate-800"
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
               >
                 Tutup
               </button>
-            </div>
+            </footer>
           </div>
         </div>
       )}
@@ -416,3 +548,21 @@ function DashboardAdminMaster() {
 }
 
 export default DashboardAdminMaster;
+
+const STATUS_BADGE = {
+  'Menunggu Verifikasi': 'bg-amber-50 text-amber-700 border border-amber-200',
+  'Diterima': 'bg-blue-50 text-blue-700 border border-blue-200',
+  'Selesai': 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+  'Ditolak': 'bg-red-50 text-red-700 border border-red-200',
+};
+
+function InfoItem({ label, value }) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+      <p className="mt-1 text-sm font-semibold text-slate-800 leading-snug break-words">
+        {value || <span className="text-slate-400 font-normal italic">-</span>}
+      </p>
+    </div>
+  );
+}

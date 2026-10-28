@@ -7,38 +7,62 @@ import { MOCK_WEEKLY_CHART, MOCK_MONTHLY_CHART, MOCK_FACILITY_CATEGORIES } from 
 import WeeklyChart from '../components/mobile/WeeklyChart';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
-import { laporanAPI } from '../services/api';
+import { useLaporanList } from '../hooks/useLaporanList';
+import { masterAPI } from '../services/api';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
-import { getErrorMessage } from '../utils/error';
 
 function AnalyticsPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  const { reports, loading, error, reload } = useLaporanList();
   const [timeRange, setTimeRange] = useState('mingguan');
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [chartData, setChartData] = useState(null);
+  const [chartLoading, setChartLoading] = useState(true);
+  const [periodSummary, setPeriodSummary] = useState(null);
 
-  const loadReports = async () => {
+  // Fetch chart data from backend
+  const fetchChartData = async () => {
     try {
-      setLoading(true);
-      setError(null);
-      const res = await laporanAPI.list({});
-      setReports(res.data.data || res.data);
+      setChartLoading(true);
+      const res = await masterAPI.getAnalytics();
+      const data = res.data?.data || res.data;
+      
+      const transformToChartFormat = (arr) => {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(item => ({
+          label: item.label || item.tanggal || item.periode || item.hari || item.bulan || item.nama || '',
+          value: Number(item.value || item.jumlah || item.total || item.count || 0)
+        })).filter(item => item.label && !isNaN(item.value));
+      };
+
+      if (data) {
+        const mingguan = transformToChartFormat(data.statistik_harian || data.statistik_mingguan || data.chart_data || data.grafik || []);
+        const bulanan = transformToChartFormat(data.statistik_bulanan || data.statistik_mingguan || data.chart_data || data.grafik || []);
+
+        if (mingguan.length > 0 || bulanan.length > 0) {
+          setChartData({ mingguan, bulanan });
+        }
+
+        // Period summary data
+        if (data.ringkasan_periode || data.period_summary || data.summary) {
+          setPeriodSummary(data.ringkasan_periode || data.period_summary || data.summary);
+        }
+      }
     } catch (err) {
-      console.error('Error loading reports:', err);
-      setError(getErrorMessage(err));
+      console.error('Error loading chart data:', err);
     } finally {
-      setLoading(false);
+      setChartLoading(false);
     }
   };
 
   useEffect(() => {
-    loadReports();
+    fetchChartData();
   }, []);
 
-  const chartData = timeRange === 'mingguan' ? MOCK_WEEKLY_CHART : MOCK_MONTHLY_CHART;
+  const currentChartData = chartData 
+    ? (timeRange === 'mingguan' ? chartData.mingguan : chartData.bulanan)
+    : (timeRange === 'mingguan' ? MOCK_WEEKLY_CHART : MOCK_MONTHLY_CHART);
 
   const stats = {
     total: reports.length,
@@ -71,9 +95,9 @@ function AnalyticsPage() {
     navigate('/admin-login');
   };
 
-  if (loading) return <LoadingScreen message="Memuat analytics..." />;
+  if (loading && reports.length === 0) return <LoadingScreen message="Memuat analytics..." />;
 
-  if (error) return <ErrorState message={error} onRetry={loadReports} />;
+  if (error && reports.length === 0) return <ErrorState message={error} onRetry={reload} />;
 
   const getColorClass = (color) => {
     const colors = {
@@ -177,6 +201,33 @@ function AnalyticsPage() {
 
         {/* Content */}
         <main className="p-8 space-y-8 max-w-[1400px] w-full mx-auto">
+          {/* Period Summary - MOVED TO TOP */}
+          <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-2xl shadow-lg text-white">
+            <div className="flex items-center gap-3 mb-6">
+              <Calendar className="w-6 h-6" />
+              <div>
+                <h2 className="font-bold text-base">Ringkasan Periode Ini</h2>
+                <p className="text-xs text-blue-100 mt-0.5">
+                  {periodSummary?.periode || '1 - 30 September 2026'}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                <p className="text-xs text-blue-100 mb-1">Rata-rata Waktu Respon</p>
+                <p className="text-2xl font-bold">{periodSummary?.avg_response_time || '2.3 hari'}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                <p className="text-xs text-blue-100 mb-1">Tingkat Penyelesaian</p>
+                <p className="text-2xl font-bold">{periodSummary?.completion_rate || '96%'}</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                <p className="text-xs text-blue-100 mb-1">Kepuasan Warga</p>
+                <p className="text-2xl font-bold">{periodSummary?.satisfaction || '4.7/5.0'}</p>
+              </div>
+            </div>
+          </div>
+
           {/* Stats Overview */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -248,7 +299,13 @@ function AnalyticsPage() {
               </div>
             </div>
             <div className="h-64 flex items-center justify-center">
-              <WeeklyChart data={chartData} width={800} height={220} />
+              {chartLoading ? (
+                <div className="w-full h-full flex items-center justify-center text-slate-400">
+                  <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                </div>
+              ) : (
+                <WeeklyChart data={currentChartData} width={800} height={220} />
+              )}
             </div>
           </div>
 
@@ -305,31 +362,6 @@ function AnalyticsPage() {
                     </div>
                   </div>
                 ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Performance Metrics */}
-          <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-6 rounded-2xl shadow-lg text-white">
-            <div className="flex items-center gap-3 mb-6">
-              <Calendar className="w-6 h-6" />
-              <div>
-                <h2 className="font-bold text-base">Ringkasan Periode Ini</h2>
-                <p className="text-xs text-blue-100 mt-0.5">1 - 30 September 2026</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-xs text-blue-100 mb-1">Rata-rata Waktu Respon</p>
-                <p className="text-2xl font-bold">2.3 hari</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-xs text-blue-100 mb-1">Tingkat Penyelesaian</p>
-                <p className="text-2xl font-bold">96%</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-xs text-blue-100 mb-1">Kepuasan Warga</p>
-                <p className="text-2xl font-bold">4.7/5.0</p>
               </div>
             </div>
           </div>
