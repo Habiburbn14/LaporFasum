@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix Leaflet marker icons if needed in future
+// Fix Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -73,11 +73,19 @@ export const SCALA_LAYERS = {
   },
 };
 
-function CustomMap({ activeLayers = {}, baseMap = 'openstreetmap', onResetFocus }) {
+function CustomMap({
+  reports = [],
+  activeLayers = {},
+  baseMap = 'openstreetmap',
+  onResetFocus,
+  onMarkerClick,
+  selectedReport,
+}) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const layersRef = useRef({});
   const boundaryLayerRef = useRef(null);
+  const markersRef = useRef([]);
 
   // Inisialisasi peta Leaflet
   useEffect(() => {
@@ -133,12 +141,10 @@ function CustomMap({ activeLayers = {}, baseMap = 'openstreetmap', onResetFocus 
       .then((geojsonData) => {
         if (!isMounted || !mapInstanceRef.current) return;
 
-        // Hapus boundary layer sebelumnya jika ada
         if (boundaryLayerRef.current && map.hasLayer(boundaryLayerRef.current)) {
           map.removeLayer(boundaryLayerRef.current);
         }
 
-        // Buat layer batas wilayah garis merah
         const boundaryLayer = L.geoJSON(geojsonData, {
           style: {
             color: '#ef4444',       // Garis merah mencolok
@@ -154,7 +160,6 @@ function CustomMap({ activeLayers = {}, baseMap = 'openstreetmap', onResetFocus 
         boundaryLayer.addTo(map);
         boundaryLayerRef.current = boundaryLayer;
 
-        // Peta otomatis fit bounds pas pada batas Kabupaten Lamongan
         const bounds = boundaryLayer.getBounds();
         if (bounds.isValid()) {
           map.fitBounds(bounds, {
@@ -204,7 +209,6 @@ function CustomMap({ activeLayers = {}, baseMap = 'openstreetmap', onResetFocus 
     const activeKeys = Object.keys(activeLayers).filter((key) => activeLayers[key]);
 
     activeKeys.forEach((layerKey) => {
-      // Jika layer sudah terpasang, lewati
       if (layersRef.current[layerKey]) return;
 
       const layerConfig = SCALA_LAYERS[layerKey];
@@ -217,7 +221,6 @@ function CustomMap({ activeLayers = {}, baseMap = 'openstreetmap', onResetFocus 
         })
         .then((geojsonData) => {
           if (!mapInstanceRef.current) return;
-          // Pastikan masih aktif saat respons diterima
           if (!activeLayers[layerKey]) return;
 
           const roadLayer = L.geoJSON(geojsonData, {
@@ -238,6 +241,84 @@ function CustomMap({ activeLayers = {}, baseMap = 'openstreetmap', onResetFocus 
         });
     });
   }, [activeLayers]);
+
+  // Titik Lokasi Laporan Warga (Interactive Pulse Markers)
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
+
+    // Hapus marker lama
+    markersRef.current.forEach((marker) => {
+      if (map.hasLayer(marker)) {
+        map.removeLayer(marker);
+      }
+    });
+    markersRef.current = [];
+
+    // Tambahkan marker laporan baru
+    (reports || []).forEach((report) => {
+      const lat = parseFloat(report.lat);
+      const lng = parseFloat(report.lng);
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      const statusColor = {
+        'Menunggu Verifikasi': '#f59e0b',
+        'Diterima': '#3b82f6',
+        'Sedang Diproses': '#8b5cf6',
+        'Selesai': '#10b981',
+        'Ditolak': '#ef4444',
+      }[report.status] || '#3b82f6';
+
+      const isSelected = selectedReport && (selectedReport.id === report.id || selectedReport.ticket_code === report.ticket_code);
+
+      const markerHtml = `
+        <div style="
+          width: ${isSelected ? '32px' : '26px'};
+          height: ${isSelected ? '32px' : '26px'};
+          background-color: ${statusColor};
+          border: 3px solid #ffffff;
+          border-radius: 50%;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transform: ${isSelected ? 'scale(1.2)' : 'scale(1)'};
+          transition: all 0.2s ease;
+        ">
+          <div style="
+            width: ${isSelected ? '8px' : '6px'};
+            height: ${isSelected ? '8px' : '6px'};
+            background-color: #ffffff;
+            border-radius: 50%;
+          "></div>
+        </div>
+      `;
+
+      const markerIcon = L.divIcon({
+        html: markerHtml,
+        iconSize: [isSelected ? 32 : 26, isSelected ? 32 : 26],
+        className: 'custom-report-pin',
+      });
+
+      const marker = L.marker([lat, lng], { icon: markerIcon });
+      if (onMarkerClick) {
+        marker.on('click', () => onMarkerClick(report));
+      }
+      marker.addTo(map);
+      markersRef.current.push(marker);
+    });
+  }, [reports, selectedReport, onMarkerClick]);
+
+  // Focus ke titik laporan yang dipilih
+  useEffect(() => {
+    if (!mapInstanceRef.current || !selectedReport) return;
+    const lat = parseFloat(selectedReport.lat);
+    const lng = parseFloat(selectedReport.lng);
+    if (!isNaN(lat) && !isNaN(lng)) {
+      mapInstanceRef.current.setView([lat, lng], 15, { animate: true });
+    }
+  }, [selectedReport]);
 
   return <div ref={mapRef} className="w-full h-full" />;
 }

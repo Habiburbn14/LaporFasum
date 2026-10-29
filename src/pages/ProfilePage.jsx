@@ -24,10 +24,10 @@ import FeedbackModal from '../components/profile/FeedbackModal';
 import PolicyModal from '../components/profile/PolicyModal';
 import { getUserProfile } from '../services/userApi';
 import { useReportStore } from '../stores/useReportStore';
+import { useAuthStore } from '../stores/useAuthStore';
 import toast from 'react-hot-toast';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
-import { logout } from '../services/authApi';
 
 function ProfilePage() {
   const navigate = useNavigate();
@@ -43,6 +43,7 @@ function ProfilePage() {
   const [policyType, setPolicyType] = useState('privacy');
 
   const { reports, fetchReports } = useReportStore();
+  const { logout: authLogout } = useAuthStore();
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -66,11 +67,18 @@ function ProfilePage() {
   const totalReportsCount = reports.length;
   const completedReportsCount = reports.filter((r) => r.status === 'Selesai').length;
 
-  const handleLogout = async () => {
-    if (window.confirm('Yakin ingin keluar?')) {
-      logout();
+  const handleLogout = () => {
+    if (window.confirm('Yakin ingin keluar dari akun?')) {
+      // 1. Bersihkan session auth Zustand
+      authLogout();
+      // 2. Bersihkan storage sesi
+      sessionStorage.clear();
+      // 3. Bersihkan cache data laporan pengguna
+      useReportStore.getState().clearCache();
+      // 4. Tampilkan pesan berhasil
       toast.success('Berhasil keluar');
-      navigate('/login');
+      // 5. Arahkan user langsung ke menu login
+      navigate('/login', { replace: true });
     }
   };
 
