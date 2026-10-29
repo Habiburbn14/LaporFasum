@@ -52,12 +52,8 @@ function DashboardAdminMaster() {
       };
 
       if (data) {
-        console.log('Dashboard API response:', data);
         const mingguan = transformToChartFormat(data.statistik_harian || data.statistik_mingguan || data.chart_data || data.grafik || []);
         const bulanan = transformToChartFormat(data.statistik_bulanan || data.statistik_mingguan || data.chart_data || data.grafik || []);
-
-        console.log('Transformed mingguan:', mingguan);
-        console.log('Transformed bulanan:', bulanan);
 
         if (mingguan.length > 0 || bulanan.length > 0) {
           setChartData({ mingguan, bulanan });
@@ -108,9 +104,9 @@ function DashboardAdminMaster() {
   // Stats calculation
   const stats = {
     total: reports.length,
-    menunggu: reports.filter(r => r.status === 'Menunggu Verifikasi').length,
-    diproses: reports.filter(r => r.status === 'Diterima').length,
-    selesai: reports.filter(r => r.status === 'Selesai').length,
+    menunggu: reports.filter(r => r.status_terkini === 'Menunggu Verifikasi').length,
+    diproses: reports.filter(r => r.status_terkini === 'Diterima').length,
+    selesai: reports.filter(r => r.status_terkini === 'Selesai').length,
   };
 
   const getCurrentChartData = () => {
@@ -192,7 +188,7 @@ function DashboardAdminMaster() {
               </div>
               <div className="hidden md:block">
                 <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama_lengkap || 'Admin'}</p>
-                <p className="text-[11px] text-slate-500">Dinas PUPR Lamongan</p>
+                <p className="text-[11px] text-slate-500">{user?.email || 'admin@laporfasum.com'}</p>
               </div>
             </div>
           </div>

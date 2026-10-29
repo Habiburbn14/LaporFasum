@@ -8,6 +8,7 @@ import {
 import Logoapk from '../assets/Logoapk.svg';
 import BottomNav from '../components/mobile/BottomNav';
 import WeeklyChart from '../components/mobile/WeeklyChart';
+import { userAPI } from '../services/api';
 
 // Pemetaan 6 Kategori Teratas
 const TOP_CATEGORIES = [
@@ -37,6 +38,167 @@ function timeAgo(dateStr) {
   return `${Math.floor(hours / 24)} hari lalu`;
 }
 
+function formatDateLabel(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
+  return date.toLocaleDateString('id-ID', { weekday: 'short' });
+}
+
+function formatWeekLabel(minggu) {
+  if (!minggu) return '';
+  const str = String(minggu);
+  if (str.length === 6) {
+    const year = str.slice(0, 4);
+    const week = str.slice(4);
+    return `Mg ${week}`;
+  }
+  // If format is "2026-10" or similar
+  if (str.includes('-') || str.includes('W')) {
+    return str;
+  }
+  return `Mg ${minggu}`;
+}
+
+function formatDayLabel(hari) {
+  const days = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  if (typeof hari === 'number' && hari >= 0 && hari <= 6) {
+    return days[hari];
+  }
+  const str = String(hari).toLowerCase();
+  const dayMap = { 'monday': 'Sen', 'tuesday': 'Sel', 'wednesday': 'Rab', 'thursday': 'Kam', 'friday': 'Jum', 'saturday': 'Sab', 'sunday': 'Min' };
+  return dayMap[str] || hari;
+}
+
+function formatMonthLabel(bulan) {
+  if (!bulan) return '';
+  const str = String(bulan);
+  // Skip format strings like "%Y-%m"
+  if (str.includes('%')) return '';
+  // If format is YYYY-MM
+  if (str.length === 7 && str.includes('-')) {
+    const [year, month] = str.split('-');
+    const monthName = new Date(Number(year), Number(month) - 1).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+    return monthName;
+  }
+  // If format is YYYYMM
+  if (str.length === 6) {
+    const year = str.slice(0, 4);
+    const month = str.slice(4);
+    const monthName = new Date(Number(year), Number(month) - 1).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+    return monthName;
+  }
+  return bulan;
+}
+
+function transformChartData(arr, type = 'daily') {
+  if (!Array.isArray(arr)) return [];
+  return arr.map(item => {
+    let label = '';
+    let originalDate = null;
+    let originalWeek = null;
+    if (type === 'daily') {
+      // For daily: prefer 'hari' (day index 0-6), then 'tanggal', then 'label'
+      label = item.hari !== undefined ? formatDayLabel(item.hari) 
+        : formatDateLabel(item.tanggal || item.label || item.periode || '');
+      originalDate = item.tanggal || item.label || item.periode || '';
+    } else if (type === 'weekly') {
+      const rawWeek = item.minggu || item.week || item.periode || item.label || '';
+      label = formatWeekLabel(rawWeek);
+      originalWeek = rawWeek;
+    } else if (type === 'monthly') {
+      label = formatMonthLabel(item.bulan || item.month || item.periode || item.label || '');
+    }
+    return {
+      label,
+      value: Number(item.jumlah || item.value || item.total || item.count || 0),
+      originalDate,
+      originalWeek
+    };
+  }).filter(item => item.label && !isNaN(item.value));
+}
+
+// Fill last 7 days with data mapped by date
+function fillLast7Days(data) {
+  const result = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    const dayLabel = date.toLocaleDateString('id-ID', { weekday: 'short' });
+    const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    
+    // Find matching data by date string
+    const found = data.find(d => {
+      if (d.originalDate) return d.originalDate === dateStr;
+      return d.label === dayLabel || d.label === dateStr;
+    });
+    result.push(found || { label: dayLabel, value: 0 });
+  }
+  return result;
+}
+
+// Fill weeks of current month (Minggu 1 - N) with data mapped from absolute week numbers
+function fillWeeksOfMonth(data) {
+  const result = [];
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth(); // 0-11
+  
+  // Calculate first day of current month and last day
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1);
+  const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0);
+  
+  // Calculate week ranges for each week of this month
+  // Week 1 = first week containing 1st of month
+  // ISO week: week starts Monday
+  const firstDayWeek = getISOWeek(firstDayOfMonth);
+  const lastDayWeek = getISOWeek(lastDayOfMonth);
+  
+  // Number of weeks in this month
+  const weeksInMonth = lastDayWeek - firstDayWeek + 1;
+  
+  // Build week labels: "Mg 1", "Mg 2", etc.
+  for (let i = 0; i < weeksInMonth; i++) {
+    const label = `Mg ${i + 1}`;
+    result.push({ label, value: 0, weekNumber: firstDayWeek + i });
+  }
+  
+  // Map data to weeks
+  data.forEach(d => {
+    const weekStr = d.originalWeek || d.label || '';
+    let week = null;
+    
+    if (typeof weekStr === 'string' && weekStr.length === 6) {
+      week = parseInt(weekStr.slice(4));
+    } else if (typeof weekStr === 'number') {
+      const str = String(weekStr);
+      if (str.length === 6) {
+        week = parseInt(str.slice(4));
+      }
+    } else if (weekStr.startsWith('Mg ')) {
+      week = parseInt(weekStr.replace('Mg ', ''));
+    }
+    
+    if (week && week >= firstDayWeek && week <= lastDayWeek) {
+      const weekIndex = week - firstDayWeek;
+      if (weekIndex >= 0 && weekIndex < result.length) {
+        result[weekIndex].value += d.value;
+      }
+    }
+  });
+  
+  return result;
+}
+
+function getISOWeek(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+  const yearStart = new Date(d.getFullYear(), 0, 1);
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
 function HomePage() {
   const [range, setRange] = useState('mingguan');
   const [stats, setStats] = useState([]);
@@ -48,24 +210,13 @@ function HomePage() {
 
   const fetchData = async () => {
     try {
-      const token = sessionStorage.getItem('access_token');
-      const headers = {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      };
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-
       const [dashboardRes, notificationsRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_BASE_URL}/dashboard/user`, { headers, signal: controller.signal }),
-        fetch(`${import.meta.env.VITE_BASE_URL}/dashboard/notifikasi`, { headers, signal: controller.signal })
+        userAPI.getDashboard(),
+        userAPI.getNotifications()
       ]);
 
-      clearTimeout(timeoutId);
-
-      const dashboardData = await dashboardRes.json();
-      const notificationsData = await notificationsRes.json();
+      const dashboardData = dashboardRes.data?.data || dashboardRes.data;
+      const notificationsData = notificationsRes.data?.data || notificationsRes.data;
 
       // Mapping manual untuk statistik wilayah dari JSON backend
       const rawStats = dashboardData.statistik_wilayah || {};
@@ -76,8 +227,13 @@ function HomePage() {
       ];
 
       setStats(formattedStats);
-      setWeeklyChartData(dashboardData.statistik_harian || []);
-      setMonthlyChartData(dashboardData.statistik_mingguan || []);
+      // Mingguan = 7 hari terakhir (statistik_harian)
+      const dailyData = transformChartData(dashboardData.statistik_harian || [], 'daily');
+      setWeeklyChartData(fillLast7Days(dailyData));
+      // Bulanan = Minggu 1-N bulan ini (dari statistik_mingguan)
+      const weeklyRawData = dashboardData.statistik_mingguan || dashboardData.statistik_bulanan || [];
+      const weeklyData = transformChartData(weeklyRawData, 'weekly');
+      setMonthlyChartData(fillWeeksOfMonth(weeklyData));
       setRecentReports(dashboardData.laporan_terbaru || []);
       setNotifications(notificationsData || []);
     } catch (error) {

@@ -66,9 +66,9 @@ function AnalyticsPage() {
 
   const stats = {
     total: reports.length,
-    menunggu: reports.filter(r => r.status === 'Menunggu Verifikasi').length,
-    diproses: reports.filter(r => r.status === 'Diterima').length,
-    selesai: reports.filter(r => r.status === 'Selesai').length,
+    menunggu: reports.filter(r => r.status_terkini === 'Menunggu Verifikasi').length,
+    diproses: reports.filter(r => r.status_terkini === 'Diterima').length,
+    selesai: reports.filter(r => r.status_terkini === 'Selesai').length,
   };
 
   const categoryStats = MOCK_FACILITY_CATEGORIES.slice(0, 6).map(cat => {

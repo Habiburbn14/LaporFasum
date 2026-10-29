@@ -112,4 +112,15 @@ export const gisAPI = {
   }),
 };
 
+export const userAPI = {
+  getDashboard: () => api.get('/dashboard/user', {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    }
+  }),
+  getNotifications: () => api.get('/dashboard/notifikasi'),
+};
+
 export default api;
