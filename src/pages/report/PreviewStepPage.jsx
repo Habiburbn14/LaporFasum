@@ -19,10 +19,11 @@ export default function PreviewStepPage() {
   const formData = formDataStr ? JSON.parse(formDataStr) : null;
   const submitTime = submitTimeStr ? new Date(submitTimeStr) : new Date();
 
-  const gpsCoords = useMemo(() => 
-    locationData ? { lat: locationData.latitude, lng: locationData.longitude } : { lat: -6.8938, lng: 112.2140 },
-    [locationData]
-  );
+  // Use locationData directly; no fallback coordinates.
+  const gpsCoords = useMemo(() => ({
+    lat: locationData?.latitude,
+    lng: locationData?.longitude,
+  }), [locationData]);
 
   useEffect(() => {
     if (!photoUrl || !locationData || !formData) {
@@ -42,11 +43,11 @@ export default function PreviewStepPage() {
     return `${dayName}, ${day} ${month} ${year} - ${hours}:${minutes}`;
   }, []);
 
-const handleFinalSubmit = useCallback(async () => {
+  const handleFinalSubmit = useCallback(async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
     const toastId = toast.loading('Mengirim laporan...');
-    
+
     try {
       // Convert photo URI to compressed File
       let file = await uriToFile(photoUrl, 'bukti-laporan', 1200, 0.7);

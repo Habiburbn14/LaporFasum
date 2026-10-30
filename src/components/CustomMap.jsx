@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -86,6 +86,86 @@ function CustomMap({
   const layersRef = useRef({});
   const boundaryLayerRef = useRef(null);
   const markersRef = useRef([]);
+  const userLocationMarkerRef = useRef(null);
+  const [userCoords, setUserCoords] = useState(null);
+
+  // Pantau lokasi GPS pengguna secara live (Real-time GPS User Dot)
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserCoords({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      (err) => {
+        console.warn('Geolocation error:', err.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 10000,
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, []);
+
+  // Render Marker Posisi Pengguna Saat Ini (Pulsing Blue Dot)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !userCoords) return;
+    const map = mapInstanceRef.current;
+
+    if (userLocationMarkerRef.current && map.hasLayer(userLocationMarkerRef.current)) {
+      map.removeLayer(userLocationMarkerRef.current);
+    }
+
+    const userMarkerIcon = L.divIcon({
+      html: `
+        <div style="position: relative; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;">
+          <div style="
+            position: absolute;
+            width: 38px;
+            height: 38px;
+            background: rgba(37, 99, 235, 0.25);
+            border-radius: 50%;
+            animation: user-radar 2s ease-out infinite;
+          "></div>
+          <div style="
+            width: 18px;
+            height: 18px;
+            background-color: #2563eb;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(37, 99, 235, 0.5);
+            position: relative;
+            z-index: 2;
+          "></div>
+        </div>
+      `,
+      className: 'user-current-gps-pin',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    });
+
+    const marker = L.marker([userCoords.lat, userCoords.lng], {
+      icon: userMarkerIcon,
+      zIndexOffset: 1000,
+    });
+
+    marker.bindTooltip('Posisi Anda Saat Ini', {
+      direction: 'top',
+      offset: [0, -12],
+      className: 'bg-slate-900 text-white text-xs px-2 py-1 rounded shadow font-sans',
+    });
+
+    marker.addTo(map);
+    userLocationMarkerRef.current = marker;
+  }, [userCoords]);
 
   // Inisialisasi peta Leaflet
   useEffect(() => {
@@ -146,6 +226,11 @@ function CustomMap({
         }
 
         const boundaryLayer = L.geoJSON(geojsonData, {
+          filter: (feature) => {
+            // HANYA ambil garis batas wilayah (Polygon / MultiPolygon)
+            // Abaikan node Point pusat kota agar tidak memunculkan pin leaflet palsu di Tumenggungan/Lamongan
+            return feature.geometry && feature.geometry.type !== 'Point';
+          },
           style: {
             color: '#ef4444',       // Garis merah mencolok
             weight: 3.5,            // Ketebalan garis
@@ -177,9 +262,18 @@ function CustomMap({
     };
   }, []);
 
-  // Expose reset focus handler jika di-trigger oleh parent
+  // Expose reset focus handler jika di-trigger oleh parent (Tombol Crosshair)
   useEffect(() => {
-    if (onResetFocus && boundaryLayerRef.current && mapInstanceRef.current) {
+    if (!onResetFocus || !mapInstanceRef.current) return;
+
+    if (userCoords?.lat && userCoords?.lng) {
+      mapInstanceRef.current.setView([userCoords.lat, userCoords.lng], 16, {
+        animate: true,
+      });
+      return;
+    }
+
+    if (boundaryLayerRef.current) {
       const bounds = boundaryLayerRef.current.getBounds();
       if (bounds.isValid()) {
         mapInstanceRef.current.fitBounds(bounds, {
@@ -188,7 +282,7 @@ function CustomMap({
         });
       }
     }
-  }, [onResetFocus]);
+  }, [onResetFocus, userCoords]);
 
   // Load dan Kelola Layer Jalan SCALA (Navigasi Jalan)
   useEffect(() => {
@@ -271,33 +365,28 @@ function CustomMap({
 
       const isSelected = selectedReport && (selectedReport.id === report.id || selectedReport.ticket_code === report.ticket_code);
 
-      const markerHtml = `
+      const pinHtml = `
         <div style="
-          width: ${isSelected ? '32px' : '26px'};
-          height: ${isSelected ? '32px' : '26px'};
-          background-color: ${statusColor};
-          border: 3px solid #ffffff;
-          border-radius: 50%;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          width: ${isSelected ? '36px' : '30px'};
+          height: ${isSelected ? '44px' : '38px'};
+          position: relative;
           cursor: pointer;
-          transform: ${isSelected ? 'scale(1.2)' : 'scale(1)'};
-          transition: all 0.2s ease;
+          transform: ${isSelected ? 'scale(1.15) translateY(-4px)' : 'scale(1)'};
+          transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+          filter: drop-shadow(0 4px 8px rgba(0,0,0,0.35));
         ">
-          <div style="
-            width: ${isSelected ? '8px' : '6px'};
-            height: ${isSelected ? '8px' : '6px'};
-            background-color: #ffffff;
-            border-radius: 50%;
-          "></div>
+          <svg viewBox="0 0 24 32" width="100%" height="100%" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 0C5.37258 0 0 5.37258 0 12C0 21 12 32 12 32C12 32 24 21 24 12C24 5.37258 18.6274 0 12 0Z" fill="${statusColor}"/>
+            <circle cx="12" cy="11" r="5" fill="#ffffff"/>
+            <circle cx="12" cy="11" r="2.5" fill="${statusColor}"/>
+          </svg>
         </div>
       `;
 
       const markerIcon = L.divIcon({
-        html: markerHtml,
-        iconSize: [isSelected ? 32 : 26, isSelected ? 32 : 26],
+        html: pinHtml,
+        iconSize: [isSelected ? 36 : 30, isSelected ? 44 : 38],
+        iconAnchor: [isSelected ? 18 : 15, isSelected ? 44 : 38],
         className: 'custom-report-pin',
       });
 

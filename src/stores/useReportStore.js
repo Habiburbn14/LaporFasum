@@ -40,8 +40,8 @@ export const useReportStore = create(
               created_at: r.created_at || '',
               tanggapan: r.tanggapan || null,
               tanggal_tanggapan: r.tanggal_tanggapan || null,
-              lat: r.lat || r.latitude || -6.8938,
-              lng: r.lng || r.longitude || 112.2140,
+              lat: r.lat ?? r.latitude,
+              lng: r.lng ?? r.longitude,
             }));
 
             set({
@@ -84,8 +84,8 @@ export const useReportStore = create(
               created_at: r.created_at || '',
               tanggapan: r.tanggapan || null,
               tanggal_tanggapan: r.tanggal_tanggapan || null,
-              lat: r.lat || r.latitude || -6.8938,
-              lng: r.lng || r.longitude || 112.2140,
+              lat: r.lat ?? r.latitude,
+              lng: r.lng ?? r.longitude,
             }));
 
             set({ reports: mappedReports, loading: false });

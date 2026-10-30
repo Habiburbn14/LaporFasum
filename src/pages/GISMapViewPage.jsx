@@ -535,6 +535,7 @@ function GISMapViewPage() {
             {lamonganData && (
               <GeoJSON
                 data={lamonganData}
+                filter={(feature) => feature.geometry?.type !== 'Point'}
                 style={boundaryStyle}
               />
             )}

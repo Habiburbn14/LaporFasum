@@ -28,3 +28,14 @@
 .leaflet-container {
   font-family: inherit !important;
 }
+
+@keyframes user-radar {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
