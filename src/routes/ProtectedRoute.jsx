@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 
 function ProtectedRoute({ children }) {
-  const { user, loading, fetchUser } = useAuthStore();
+  const { user, loading } = useAuthStore();
   const location = useLocation();
 
   if (loading) {

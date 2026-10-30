@@ -23,11 +23,17 @@ function WeeklyChart({ data, width = 320, height = 120 }) {
     return { x, y };
   });
 
-  const linePath = points
-    .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-    .join(' ');
+  // For single point, just show a dot - no line/area
+  const isSinglePoint = data.length === 1;
+  const linePath = isSinglePoint 
+    ? `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`
+    : points
+        .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+        .join(' ');
 
-  const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+  const areaPath = isSinglePoint 
+    ? '' 
+    : `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
 
   return (
     <div className="w-full">
@@ -38,10 +44,12 @@ function WeeklyChart({ data, width = 320, height = 120 }) {
             <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
           </linearGradient>
         </defs>
-        <path d={areaPath} fill="url(#chartFill)" />
-        <path d={linePath} fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {areaPath && <path d={areaPath} fill="url(#chartFill)" />}
+        {data.length > 1 && (
+          <path d={linePath} fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        )}
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="3" fill="#2563eb" />
+          <circle key={i} cx={p.x} cy={p.y} r="4" fill="#2563eb" />
         ))}
       </svg>
       <div className="flex justify-between mt-1 px-1">
