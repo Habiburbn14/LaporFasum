@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useAuthStore, roleOf, homePathForRole } from '../stores/useAuthStore';
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuthStore();
@@ -14,7 +14,7 @@ function PublicRoute({ children }) {
   }
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={homePathForRole(roleOf(user))} replace />;
   }
 
   return children;

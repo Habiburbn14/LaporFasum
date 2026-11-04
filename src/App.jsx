@@ -20,6 +20,9 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
+import { ROLE } from './stores/useAuthStore';
+
+const { USER, ADMIN_KECAMATAN, ADMIN_KABUPATEN } = ROLE;
 
 function App() {
   return (
@@ -52,7 +55,7 @@ function App() {
       />
       <Routes>
         <Route path="/" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <HomePage />
           </ProtectedRoute>
         } />
@@ -66,70 +69,74 @@ function App() {
             <RegisterPage />
           </PublicRoute>
         } />
-        <Route path="/admin-login" element={<AdminLoginPage />} />
+        <Route path="/admin-login" element={
+          <PublicRoute>
+            <AdminLoginPage />
+          </PublicRoute>
+        } />
         
         <Route path="/report/form" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <FormStepPage />
           </ProtectedRoute>
         } />
         <Route path="/report/preview" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <PreviewStepPage />
           </ProtectedRoute>
         } />
         <Route path="/report/success" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <SuccessStepPage />
           </ProtectedRoute>
         } />
         <Route path="/tracking" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <TrackingPage />
           </ProtectedRoute>
         } />
         <Route path="/profile" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <ProfilePage />
           </ProtectedRoute>
         } />
         <Route path="/admin/master" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[ADMIN_KECAMATAN, ADMIN_KABUPATEN]}>
             <DashboardAdminMaster />
           </ProtectedRoute>
         } />
         <Route path="/fasilitas" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <FacilityCategoriesPage />
           </ProtectedRoute>
         } />
         <Route path="/fasilitas/:id" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <FacilityDetailPage />
           </ProtectedRoute>
         } />
         <Route path="/map" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[USER]}>
             <GISMapViewPage />
           </ProtectedRoute>
         } />
         <Route path="/admin/triage" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[ADMIN_KECAMATAN, ADMIN_KABUPATEN]}>
             <TriageReportsPage />
           </ProtectedRoute>
         } />
         <Route path="/admin/gis" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[ADMIN_KECAMATAN, ADMIN_KABUPATEN]}>
             <GISMapViewPage />
           </ProtectedRoute>
         } />
         <Route path="/admin/analytics" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[ADMIN_KECAMATAN, ADMIN_KABUPATEN]}>
             <AnalyticsPage />
           </ProtectedRoute>
         } />
         <Route path="/admin/settings" element={
-          <ProtectedRoute>
+          <ProtectedRoute roles={[ADMIN_KECAMATAN, ADMIN_KABUPATEN]}>
             <SettingsPage />
           </ProtectedRoute>
         } />

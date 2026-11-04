@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { loginUser } from '../services/authApi';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useAuthStore, roleOf, homePathForRole, ROLE } from '../stores/useAuthStore';
 import toast from 'react-hot-toast';
 
 function AdminLoginPage() {
@@ -18,13 +18,29 @@ function AdminLoginPage() {
     const result = await loginUser(formData.username, formData.password);
     setLoading(false);
 
-    if (result.success) {
-      toast.success('Login Admin Berhasil');
-      await login(result.token, result.user);
-      navigate('/admin/master', { replace: true });
-    } else {
+    if (!result.success) {
       toast.error(result.error);
+      return;
     }
+
+    // Validate: page ini hanya untuk admin (role 2 & 3)
+    await login(result.token, result.user);
+
+    let currentUser = useAuthStore.getState().user;
+    if (!roleOf(currentUser)) {
+      await useAuthStore.getState().fetchUser();
+      currentUser = useAuthStore.getState().user;
+    }
+
+    const role = roleOf(currentUser);
+    if (role !== ROLE.ADMIN_KECAMATAN && role !== ROLE.ADMIN_KABUPATEN) {
+      toast.error('Akun ini bukan admin. Silakan masuk melalui halaman login warga.');
+      useAuthStore.getState().logout();
+      return;
+    }
+
+    toast.success('Login Admin Berhasil');
+    navigate(homePathForRole(role), { replace: true });
   };
 
   return (

@@ -1,10 +1,12 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useAuthStore, roleOf, homePathForRole } from '../stores/useAuthStore';
 
-function ProtectedRoute({ children }) {
+function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuthStore();
   const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
+  const role = roleOf(user);
 
   if (loading) {
     return (
@@ -15,7 +17,18 @@ function ProtectedRoute({ children }) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+    return (
+      <Navigate
+        to={isAdminPath ? '/admin-login' : '/login'}
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
+  // Role restriction: if roles provided, user's role must be included
+  if (roles && !roles.includes(role)) {
+    return <Navigate to={homePathForRole(role)} replace />;
   }
 
   return children;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut, 
-  Search, Bell, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye 
+  Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye 
 } from 'lucide-react';
 import { MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART } from '../utils/mockData';
 import WeeklyChart from '../components/mobile/WeeklyChart';
@@ -13,6 +13,7 @@ import { useLaporanList } from '../hooks/useLaporanList';
 import { laporanAPI, masterAPI, adminAPI } from '../services/api';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
+import NotificationPopup from '../components/ui/NotificationPopup';
 
 function DashboardAdminMaster() {
   const navigate = useNavigate();
@@ -178,16 +179,13 @@ function DashboardAdminMaster() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button className="relative w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-100">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-            </button>
+            <NotificationPopup />
             <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
               <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
                 {user?.nama?.charAt(0)?.toUpperCase() || 'A'}
               </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama_lengkap || 'Admin'}</p>
+                <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama_lengkap || user?.nama || 'Admin'}</p>
                 <p className="text-[11px] text-slate-500">{user?.email || 'admin@laporfasum.com'}</p>
               </div>
             </div>

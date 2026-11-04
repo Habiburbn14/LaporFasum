@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { loginUser } from '../services/authApi';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useAuthStore, roleOf, homePathForRole } from '../stores/useAuthStore';
 import toast from 'react-hot-toast';
 
 function LoginPage() {
@@ -24,9 +24,25 @@ function LoginPage() {
     setLoading(false);
 
     if (result.success) {
-      toast.success('Login Berhasil');
       await login(result.token, result.user);
-      navigate('/', { replace: true });
+
+      // Ensure role data is available, then redirect based on role
+      let currentUser = useAuthStore.getState().user;
+      if (!roleOf(currentUser)) {
+        await useAuthStore.getState().fetchUser();
+        currentUser = useAuthStore.getState().user;
+      }
+
+      const role = roleOf(currentUser);
+      if (!role) {
+        toast.error('Gagal memuat data akun');
+        useAuthStore.getState().logout();
+        return;
+      }
+
+      toast.success('Login Berhasil');
+      // Admin yang login lewat halaman user diarahkan ke halaman admin
+      navigate(homePathForRole(role), { replace: true });
     } else {
       toast.error(result.error || 'Login gagal');
     }

@@ -104,6 +104,13 @@ export const masterAPI = {
   getAnalytics: () => api.get('/master/analytics'),
   getAllReports: (filters) => api.get('/master/reports', { params: filters }),
   getHeatmap: () => api.get('/master/heatmap'),
+  getNotifications: () => api.get('/master/notifikasi', {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    }
+  }),
 };
 
 export const gisAPI = {

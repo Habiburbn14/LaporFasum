@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { laporanAPI } from '../services/api';
 import { getErrorMessage } from '../utils/error';
+import { useAuthStore } from '../stores/useAuthStore';
 
 const normalizeList = (payload) => {
   if (Array.isArray(payload?.data)) return payload.data;
@@ -12,6 +13,7 @@ export function useLaporanList(filters = {}) {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user } = useAuthStore();
 
   const filtersKey = JSON.stringify(filters);
   const abortRef = useRef(null);
@@ -27,7 +29,12 @@ export function useLaporanList(filters = {}) {
     setError(null);
 
     try {
-      const res = await laporanAPI.list(JSON.parse(filtersKey), { signal: controller.signal });
+      // Admin kecamatan: filter by kecamatan
+      const queryParams = user?.id_role === 2 
+        ? { ...JSON.parse(filtersKey), id_kecamatan: user.id_kecamatan || user.id_kecamatan }
+        : JSON.parse(filtersKey);
+      
+      const res = await laporanAPI.list(queryParams, { signal: controller.signal });
       if (seq !== seqRef.current) return;
       setReports(normalizeList(res.data));
       setError(null);
@@ -38,7 +45,7 @@ export function useLaporanList(filters = {}) {
     } finally {
       if (seq === seqRef.current) setLoading(false);
     }
-  }, [filtersKey]);
+  }, [filtersKey, user?.id_role, user?.id_kecamatan]);
 
   useEffect(() => {
     load();
