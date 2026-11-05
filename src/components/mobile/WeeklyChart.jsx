@@ -49,7 +49,7 @@ function WeeklyChart({ data, width = 320, height = 120 }) {
           <path d={linePath} fill="none" stroke="#2563eb" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         )}
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="4" fill="#2563eb" />
+          <circle key={i} cx={p.x} cy={p.y} r="3" fill="#2563eb" />
         ))}
       </svg>
       <div className="flex justify-between mt-1 px-1">

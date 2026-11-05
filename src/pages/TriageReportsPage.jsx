@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
-  LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut,
-  Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye, X
+  Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye, X, MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -13,6 +12,44 @@ import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
 import NotificationPopup from '../components/ui/NotificationPopup';
+import AdminSidebar from '../components/AdminSidebar';
+import LogoutConfirm from '../components/ui/LogoutConfirm';
+
+function ImageWithFallback({ src, alt, className = '' }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className={`relative ${className}`}>
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-100 z-10">
+          <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+        </div>
+      )}
+      {!hasError && (
+        <img
+          src={src}
+          alt={alt}
+          className={`w-full h-full object-cover transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+          onLoad={() => setIsLoading(false)}
+          onError={() => {
+            setHasError(true);
+            setIsLoading(false);
+          }}
+        />
+      )}
+      {hasError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100 text-slate-400 p-4">
+          <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center mb-2">
+            <span className="text-2xl">🖼️</span>
+          </div>
+          <p className="text-sm font-medium">Gambar tidak tersedia</p>
+          <p className="text-xs text-slate-500 mt-1">Gagal memuat bukti foto</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function TriageReportsPage() {
   const navigate = useNavigate();
@@ -25,6 +62,17 @@ function TriageReportsPage() {
   const [actionType, setActionType] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+
+  const handleLogout = () => setLogoutOpen(true);
+
+  const confirmLogout = () => {
+    logout();
+    navigate('/admin-login');
+    setLogoutOpen(false);
+  };
+
+  const cancelLogout = () => setLogoutOpen(false);
 
   const filteredReports = reports.filter(r => {
     const term = searchTerm.toLowerCase();
@@ -81,11 +129,6 @@ function TriageReportsPage() {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/admin-login');
-  };
-
   if (loading && reports.length === 0) return <LoadingScreen message="Memuat triage reports..." className="bg-slate-100" />;
 
   if (error && reports.length === 0) return <ErrorState message={error} onRetry={reload} className="bg-slate-100" />;
@@ -112,51 +155,12 @@ function TriageReportsPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
-      {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 z-20">
-        <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-lg">
-            L
-          </div>
-          <div>
-            <h2 className="text-white font-bold text-base leading-tight">LaporFasum</h2>
-            <p className="text-xs text-slate-400">Lamongan Admin</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-1.5">
-          <button onClick={() => navigate('/admin/master')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-medium text-sm">
-            <ClipboardList className="w-5 h-5" />
-            Triage Reports
-          </button>
-          <button onClick={() => navigate('/admin/gis')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <Map className="w-5 h-5" />
-            GIS Map View
-          </button>
-          <button onClick={() => navigate('/admin/analytics')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <BarChart3 className="w-5 h-5" />
-            Analytics
-          </button>
-          <button onClick={() => navigate('/admin/settings')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <Settings className="w-5 h-5" />
-            Settings
-          </button>
-        </nav>
-
-        <div className="p-4 border-t border-slate-800">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 text-red-400 font-medium text-sm transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar activePath="/admin/triage" onLogout={handleLogout} />
+      <LogoutConfirm 
+        isOpen={logoutOpen} 
+        onClose={() => setLogoutOpen(false)} 
+        onConfirm={confirmLogout} 
+      />
 
       {/* Main Content */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">
@@ -248,22 +252,38 @@ function TriageReportsPage() {
                       </td>
                       <td className="py-4 px-6 text-right">
                         <div className="inline-flex items-center gap-2">
-                          <button
-                            onClick={() => openAction(report, 'accept')}
-                            disabled={report.status_terkini === 'Diterima'}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-emerald-50"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Terima
-                          </button>
-                          <button
-                            onClick={() => openAction(report, 'reject')}
-                            disabled={report.status_terkini === 'Ditolak'}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-red-50"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            Tolak
-                          </button>
+                          {report.status_terkini === 'Menunggu Verifikasi' ? (
+                            <>
+                              <button
+                                onClick={() => openAction(report, 'accept')}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold transition-colors"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                Terima
+                              </button>
+                              <button
+                                onClick={() => openAction(report, 'reject')}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                                Tolak
+                              </button>
+                            </>
+                          ) : report.status_terkini === 'Diterima' ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Diterima
+                            </span>
+                          ) : report.status_terkini === 'Ditolak' ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-700 text-xs font-semibold">
+                              <X className="w-3.5 h-3.5" />
+                              Ditolak
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 text-slate-700 text-xs font-semibold">
+                              {report.status_terkini || '-'}
+                            </span>
+                          )}
                           <button 
                             onClick={() => setSelectedReport(report)}
                             className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
@@ -289,8 +309,8 @@ function TriageReportsPage() {
       {/* Detail Modal */}
       {selectedReport && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1500] p-4">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="bg-white rounded-2xl max-w-4xl w-full shadow-xl max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.id_laporan}</h3>
               <button 
                 onClick={() => setSelectedReport(null)}
@@ -300,38 +320,68 @@ function TriageReportsPage() {
               </button>
             </div>
             
-            <div className="space-y-3">
-              <img src={selectedReport.foto_bukti} alt="Bukti" className="w-full h-48 object-cover rounded-xl" />
-              <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Judul & Kategori</p>
-                <p className="font-semibold text-slate-800 text-sm">{selectedReport.judul_laporan}</p>
-                <p className="text-xs text-blue-600 font-medium">{selectedReport.nama_kategori}</p>
+            <div className="flex flex-col md:flex-row overflow-y-auto max-h-[calc(90vh-70px)]">
+              {/* Image on left */}
+              <div className="relative md:w-1/2 flex-shrink-0">
+                <div className="w-full h-full min-h-[300px] md:min-h-[400px] relative">
+                  <ImageWithFallback 
+                    src={selectedReport.foto_bukti} 
+                    alt="Bukti laporan"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Kecamatan & Lokasi</p>
-                <p className="text-sm text-slate-700">{selectedReport.nama_kecamatan}</p>
+              
+              {/* Details on right */}
+              <div className="p-6 md:w-1/2 overflow-y-auto">
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Judul & Kategori</p>
+                    <p className="font-semibold text-slate-900 text-base mt-1">{selectedReport.judul_laporan}</p>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 mt-2">
+                      {selectedReport.nama_kategori}
+                    </span>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-slate-100">
+                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Kecamatan & Lokasi</p>
+                    <div className="flex items-center gap-2 mt-1 text-sm text-slate-700">
+                      <MapPin className="w-4 h-4 text-slate-400" />
+                      <span>{selectedReport.nama_kecamatan}, Lamongan</span>
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-slate-100">
+                    <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Deskripsi</p>
+                    <p className="text-sm text-slate-600 mt-2 bg-slate-50 p-4 rounded-xl border border-slate-100 leading-relaxed">{selectedReport.deskripsi_laporan}</p>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-slate-100 grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Pelapor</p>
+                      <p className="font-medium text-slate-800 mt-1">{selectedReport.nama_lengkap}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Tanggal Laporan</p>
+                      <p className="font-medium text-slate-800 mt-1">
+                        {new Date(selectedReport.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {selectedReport.status_terkini && (
+                    <div className="pt-4 border-t border-slate-100">
+                      <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Status Saat Ini</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${getStatusColor(selectedReport.status_terkini)}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(selectedReport.status_terkini)}`} />
+                          {selectedReport.status_terkini}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Deskripsi</p>
-                <p className="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi_laporan}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Pelapor</p>
-                <p className="text-sm text-slate-700">{selectedReport.nama_lengkap}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-400 uppercase font-bold">Tanggal Laporan</p>
-                <p className="text-sm text-slate-700">{new Date(selectedReport.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex justify-end">
-              <button
-                onClick={() => setSelectedReport(null)}
-                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-medium hover:bg-slate-800"
-              >
-                Tutup
-              </button>
             </div>
           </div>
         </div>

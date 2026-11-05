@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut,
   TrendingUp, FileText, Clock, CheckCircle2, AlertCircle, Calendar
 } from 'lucide-react';
 import { MOCK_WEEKLY_CHART, MOCK_MONTHLY_CHART, MOCK_FACILITY_CATEGORIES } from '../utils/mockData';
@@ -12,6 +11,8 @@ import { masterAPI } from '../services/api';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import NotificationPopup from '../components/ui/NotificationPopup';
+import AdminSidebar from '../components/AdminSidebar';
+import LogoutConfirm from '../components/ui/LogoutConfirm';
 
 function AnalyticsPage() {
   const navigate = useNavigate();
@@ -26,7 +27,15 @@ function AnalyticsPage() {
   const fetchChartData = async () => {
     try {
       setChartLoading(true);
-      const res = await masterAPI.getAnalytics();
+      
+      // Try admin dashboard first, fall back to analytics
+      let res;
+      try {
+        res = await adminAPI.getDashboard();
+      } catch {
+        res = await masterAPI.getAnalytics();
+      }
+      
       const data = res.data?.data || res.data;
       
       const transformToChartFormat = (arr) => {
@@ -43,15 +52,19 @@ function AnalyticsPage() {
 
         if (mingguan.length > 0 || bulanan.length > 0) {
           setChartData({ mingguan, bulanan });
+        } else {
+          setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
         }
 
         // Period summary data
         if (data.ringkasan_periode || data.period_summary || data.summary) {
           setPeriodSummary(data.ringkasan_periode || data.period_summary || data.summary);
         }
+      } else {
+        setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
       }
     } catch (err) {
-      console.error('Error loading chart data:', err);
+      setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
     } finally {
       setChartLoading(false);
     }
@@ -91,10 +104,17 @@ function AnalyticsPage() {
     { nama: 'Paciran', count: 1 }
   ];
 
-  const handleLogout = () => {
+  const [logoutOpen, setLogoutOpen] = useState(false);
+
+  const handleLogout = () => setLogoutOpen(true);
+
+  const confirmLogout = () => {
     logout();
     navigate('/admin-login');
+    setLogoutOpen(false);
   };
+
+  const cancelLogout = () => setLogoutOpen(false);
 
   if (loading && reports.length === 0) return <LoadingScreen message="Memuat analytics..." />;
 
@@ -127,50 +147,12 @@ function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 z-20">
-        <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-lg">
-            L
-          </div>
-          <div>
-            <h2 className="text-white font-bold text-base leading-tight">LaporFasum</h2>
-            <p className="text-xs text-slate-400">Lamongan Admin</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-1.5">
-          <button onClick={() => navigate('/admin/master')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </button>
-          <button onClick={() => navigate('/admin/triage')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <ClipboardList className="w-5 h-5" />
-            Triage Reports
-          </button>
-          <button onClick={() => navigate('/admin/gis')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <Map className="w-5 h-5" />
-            GIS Map View
-          </button>
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-medium text-sm">
-            <BarChart3 className="w-5 h-5" />
-            Analytics
-          </button>
-          <button onClick={() => navigate('/admin/settings')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <Settings className="w-5 h-5" />
-            Settings
-          </button>
-        </nav>
-
-        <div className="p-4 border-t border-slate-800">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 text-red-400 font-medium text-sm transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar activePath="/admin/analytics" onLogout={handleLogout} />
+      <LogoutConfirm 
+        isOpen={logoutOpen} 
+        onClose={() => setLogoutOpen(false)} 
+        onConfirm={confirmLogout} 
+      />
 
       {/* Main Content */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">

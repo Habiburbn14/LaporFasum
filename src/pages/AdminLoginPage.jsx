@@ -94,6 +94,10 @@ function AdminLoginPage() {
         </form>
 
         <p className="text-center text-xs text-slate-400 mt-8">
+          <Link to="/login" className="text-blue-600 hover:underline font-medium">
+            Masuk sebagai Warga
+          </Link>
+          {' • '}
           © 2026 LaporFasum Lamongan
         </p>
       </div>

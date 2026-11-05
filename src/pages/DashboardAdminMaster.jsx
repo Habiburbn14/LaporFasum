@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut, 
   Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye 
 } from 'lucide-react';
-import { MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART } from '../utils/mockData';
+import { MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART, MOCK_MONTHLY_CHART } from '../utils/mockData';
 import WeeklyChart from '../components/mobile/WeeklyChart';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -14,6 +13,8 @@ import { laporanAPI, masterAPI, adminAPI } from '../services/api';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import NotificationPopup from '../components/ui/NotificationPopup';
+import AdminSidebar from '../components/AdminSidebar';
+import LogoutConfirm from '../components/ui/LogoutConfirm';
 
 function DashboardAdminMaster() {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ function DashboardAdminMaster() {
   const [lamonganBoundary, setLamonganBoundary] = useState(null);
   const [chartLoading, setChartLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('mingguan');
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   // Fetch chart data from backend
   const fetchChartData = async () => {
@@ -58,10 +60,14 @@ function DashboardAdminMaster() {
 
         if (mingguan.length > 0 || bulanan.length > 0) {
           setChartData({ mingguan, bulanan });
+        } else {
+          setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
         }
+      } else {
+        setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
       }
     } catch (err) {
-      console.error('Error loading chart data:', err);
+      setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
     } finally {
       setChartLoading(false);
     }
@@ -94,8 +100,17 @@ function DashboardAdminMaster() {
   const displayedReports = showAll ? filteredReports : filteredReports.slice(0, 10);
 
   const handleLogout = () => {
+    setLogoutOpen(true);
+  };
+
+  const confirmLogout = () => {
     logout();
     navigate('/admin-login');
+    setLogoutOpen(false);
+  };
+
+  const cancelLogout = () => {
+    setLogoutOpen(false);
   };
 
   if (loading && reports.length === 0) return <LoadingScreen message="Memuat dashboard..." />;
@@ -117,51 +132,12 @@ function DashboardAdminMaster() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
-      {/* Sidebar (Left) */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 z-20">
-        <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-bold text-white text-lg">
-            L
-          </div>
-          <div>
-            <h2 className="text-white font-bold text-base leading-tight">LaporFasum</h2>
-            <p className="text-xs text-slate-400">Lamongan Admin</p>
-          </div>
-        </div>
-
-        <nav className="flex-1 p-4 space-y-1.5">
-          <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white font-medium text-sm">
-            <LayoutDashboard className="w-5 h-5" />
-            Dashboard
-          </button>
-          <button onClick={() => navigate('/admin/triage')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <ClipboardList className="w-5 h-5" />
-            Triage Reports
-          </button>
-          <button onClick={() => navigate('/admin/gis')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <Map className="w-5 h-5" />
-            GIS Map View
-          </button>
-          <button onClick={() => navigate('/admin/analytics')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <BarChart3 className="w-5 h-5" />
-            Analytics
-          </button>
-          <button onClick={() => navigate('/admin/settings')} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-slate-800 text-slate-300 font-medium text-sm transition-colors">
-            <Settings className="w-5 h-5" />
-            Settings
-          </button>
-        </nav>
-
-        <div className="p-4 border-t border-slate-800">
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 text-red-400 font-medium text-sm transition-colors"
-          >
-            <LogOut className="w-5 h-5" />
-            Logout
-          </button>
-        </div>
-      </aside>
+      <AdminSidebar activePath="/admin/master" onLogout={handleLogout} />
+      <LogoutConfirm 
+        isOpen={logoutOpen} 
+        onClose={cancelLogout} 
+        onConfirm={confirmLogout} 
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">
@@ -376,39 +352,30 @@ function DashboardAdminMaster() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
-                  {displayedReports.map((report) => (
-                    <tr key={report.id_laporan || report.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-4 px-6 font-semibold text-blue-600">{report.id_laporan}</td>
+                  {displayedReports.map((r) => (
+                    <tr key={r.id_laporan || r.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-4 px-6 font-semibold text-blue-600">{r.id_laporan || r.ticket_code}</td>
                       <td className="py-4 px-6">
-                        <p className="font-medium text-slate-800">{report.nama_lengkap}</p>
+                        <p className="font-medium text-slate-800">{r.nama_lengkap || r.pelapor}</p>
                       </td>
                       <td className="py-4 px-6 max-w-xs">
-                        <p className="font-medium text-slate-800 truncate">{report.nama_kategori}</p>
-                        <p className="text-xs text-slate-400 truncate">{report.judul_laporan} - {report.id_kecamatan_kejadian}</p>
+                        <p className="font-medium text-slate-800 truncate">{r.judul_laporan || r.judul}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{r.kategori || r.nama_kategori}</p>
                       </td>
-                      <td className="py-4 px-6 text-xs text-slate-600">{new Date(report.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                      <td className="py-4 px-6 text-xs text-slate-600">{new Date(r.tanggal || r.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
                       <td className="py-4 px-6">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                          report.status_terkini === 'Menunggu Verifikasi' ? 'bg-amber-50 text-amber-700' :
-                          report.status_terkini === 'Diterima' ? 'bg-blue-50 text-blue-700' :
-                          'bg-emerald-50 text-emerald-700'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            report.status_terkini === 'Menunggu Verifikasi' ? 'bg-amber-500' :
-                            report.status_terkini === 'Diterima' ? 'bg-blue-500' :
-                            'bg-emerald-500'
-                          }`} />
-                          {report.status_terkini}
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(r.status_terkini || r.status)}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(r.status_terkini || r.status)}`} />
+                          {r.status_terkini || r.status || '-'}
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <button
-                          onClick={() => setSelectedReport(report)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-medium transition-colors"
+                        <button 
+                          onClick={() => setSelectedReport(r)}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
                           title="Lihat Detail"
                         >
-                          <Eye className="w-3.5 h-3.5" />
-                          Detail
+                          <Eye className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -417,146 +384,122 @@ function DashboardAdminMaster() {
               </table>
             </div>
 
-            {filteredReports.length > 10 && (
-              <div className="p-4 border-t border-slate-200 bg-slate-50 text-center">
-                <button
-                  onClick={() => setShowAll(!showAll)}
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700"
-                >
-                  {showAll ? 'Tampilkan Lebih Sedikit' : `Lihat Semua (${filteredReports.length} Laporan)`}
-                </button>
+            {displayedReports.length === 0 && (
+              <div className="p-12 text-center">
+                <p className="text-slate-400">Tidak ada laporan</p>
               </div>
             )}
           </div>
-        </main>
-      </div>
 
-      {/* Detail Modal */}
-      {selectedReport && (
-        <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[1500] p-4 sm:p-6"
-          onClick={() => setSelectedReport(null)}
-        >
-          <div
-            className="bg-white rounded-2xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <header className="flex items-start justify-between gap-6 px-6 py-5 border-b border-slate-200 shrink-0">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">Detail Laporan</span>
-                  <span className="text-slate-300">·</span>
-                  <span className="text-xs font-semibold font-mono text-blue-600">
-                    {selectedReport.id_laporan || selectedReport.ticket_code || '-'}
-                  </span>
+          {/* Detail Modal */}
+          {selectedReport && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[1500] p-4">
+              <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.id_laporan}</h3>
+                  <button 
+                    onClick={() => setSelectedReport(null)}
+                    className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 leading-snug mt-1 break-words">
-                  {selectedReport.judul_laporan || 'Tanpa Judul'}
-                </h3>
-              </div>
-              <button
-                onClick={() => setSelectedReport(null)}
-                className="shrink-0 w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-                title="Tutup"
-              >
-                ✕
-              </button>
-            </header>
 
-            {/* Body: foto di kiri, detail di kanan */}
-            <div className="flex-1 min-h-0 overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[420px_minmax(0,1fr)]">
-                <div className="bg-slate-100 p-4 md:p-5 border-b md:border-b-0 md:border-r border-slate-200">
-                  {selectedReport.foto_bukti ? (
-                    <img
-                      src={selectedReport.foto_bukti}
-                      alt="Foto bukti laporan"
-                      className="w-full h-auto rounded-xl border border-slate-200 shadow-sm"
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Photo */}
+                  <div className="relative">
+                    <img 
+                      src={selectedReport.foto_bukti} 
+                      alt={selectedReport.judul_laporan}
+                      className="w-full h-64 object-cover rounded-xl"
                     />
-                  ) : (
-                    <div className="w-full h-64 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center gap-2 text-slate-400">
-                      <AlertCircle className="w-7 h-7" />
-                      <span className="text-xs font-medium">Foto tidak tersedia</span>
+                  </div>
+
+                  {/* Details */}
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold">Judul & Kategori</p>
+                      <p className="font-semibold text-slate-800 text-base mt-1">{selectedReport.judul_laporan}</p>
+                      <p className="text-xs text-blue-600 font-medium mt-1">{selectedReport.kategori}</p>
                     </div>
-                  )}
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold">Pelapor</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedReport.nama_lengkap}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold">Kecamatan</p>
+                      <p className="text-sm text-slate-700 mt-1">{selectedReport.nama_kecamatan || selectedReport.kecamatan}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold">Tanggal</p>
+                      <p className="text-sm text-slate-700 mt-1">
+                        {new Date(selectedReport.tanggal || selectedReport.created_at).toLocaleDateString('id-ID', { 
+                          day: 'numeric', month: 'long', year: 'numeric' 
+                        })}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold">Status</p>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${getStatusColor(selectedReport.status_terkini || selectedReport.status)}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(selectedReport.status_terkini || selectedReport.status)}`} />
+                        {selectedReport.status_terkini || selectedReport.status}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 uppercase font-bold">Deskripsi</p>
+                      <p className="text-sm text-slate-600 mt-1 bg-slate-50 p-3 rounded-xl border border-slate-100">{selectedReport.deskripsi_laporan || selectedReport.deskripsi}</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="p-6 space-y-6">
-                  <div className="flex items-center gap-2 flex-wrap border-b border-slate-100 pb-5">
-                    <span
-                      className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                        STATUS_BADGE[selectedReport.status_terkini || selectedReport.status] || 'bg-slate-100 text-slate-600 border border-slate-200'
-                      }`}
-                    >
-                      {selectedReport.status_terkini || selectedReport.status || '-'}
-                    </span>
-                    {(selectedReport.nama_kategori || selectedReport.id_kategori) && (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                        {selectedReport.nama_kategori || selectedReport.id_kategori}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-                    <InfoItem label="Pelapor" value={selectedReport.nama_lengkap} />
-                    <InfoItem label="Kecamatan" value={selectedReport.nama_kecamatan} />
-                    <InfoItem
-                      label="Tanggal Laporan"
-                      value={
-                        selectedReport.created_at
-                          ? new Date(selectedReport.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-                          : ''
-                      }
-                    />
-                    <InfoItem
-                      label="Waktu Diperbarui"
-                      value={selectedReport.updated_at ? new Date(selectedReport.updated_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : ''}
-                    />
-                  </div>
-
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 mb-2">Deskripsi</p>
-                    <p className="text-sm leading-relaxed text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-4">
-                      {selectedReport.deskripsi_laporan || 'Tidak ada deskripsi untuk laporan ini.'}
-                    </p>
-                  </div>
+                <div className="pt-3 border-t border-slate-100 flex justify-end">
+                  <button
+                    onClick={() => setSelectedReport(null)}
+                    className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-medium hover:bg-slate-800"
+                  >
+                    Tutup
+                  </button>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Footer */}
-            <footer className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end shrink-0">
-              <button
-                onClick={() => setSelectedReport(null)}
-                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors shadow-sm"
+          {/* View All Link */}
+          {displayedReports.length > 0 && filteredReports.length > displayedReports.length && (
+            <div className="text-center pt-4">
+              <button 
+                onClick={() => setShowAll(!showAll)}
+                className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 mx-auto"
               >
-                Tutup
+                {showAll ? 'Sembunyikan' : 'Lihat Semua'} ({filteredReports.length} total)
+                <ChevronDown className={`w-4 h-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />
               </button>
-            </footer>
-          </div>
-        </div>
-      )}
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   );
+}
+
+function getStatusColor(status) {
+  switch(status) {
+    case 'Menunggu Verifikasi': return 'bg-amber-50 text-amber-700';
+    case 'Diterima': return 'bg-blue-50 text-blue-700';
+    case 'Selesai': return 'bg-emerald-50 text-emerald-700';
+    case 'Ditolak': return 'bg-red-50 text-red-700';
+    default: return 'bg-slate-50 text-slate-700';
+  }
+}
+
+function getStatusDotColor(status) {
+  switch(status) {
+    case 'Menunggu Verifikasi': return 'bg-amber-500';
+    case 'Diterima': return 'bg-blue-500';
+    case 'Selesai': return 'bg-emerald-500';
+    case 'Ditolak': return 'bg-red-500';
+    default: return 'bg-slate-500';
+  }
 }
 
 export default DashboardAdminMaster;
-
-const STATUS_BADGE = {
-  'Menunggu Verifikasi': 'bg-amber-50 text-amber-700 border border-amber-200',
-  'Diterima': 'bg-blue-50 text-blue-700 border border-blue-200',
-  'Selesai': 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-  'Ditolak': 'bg-red-50 text-red-700 border border-red-200',
-};
-
-function InfoItem({ label, value }) {
-  return (
-    <div>
-      <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
-      <p className="mt-1 text-sm font-semibold text-slate-800 leading-snug break-words">
-        {value || <span className="text-slate-400 font-normal italic">-</span>}
-      </p>
-    </div>
-  );
-}

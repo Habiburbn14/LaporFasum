@@ -38,15 +38,17 @@ export const loginUser = async (identifier, password) => {
 };
 
 // *REGISTER
-export const registerUser = async (nama, nik, email, password) => {
+export const registerUser = async (nama, nik, email, password, alamat_domisili, id_kecamatan, id_kabupaten) => {
   try {
     const payload = {
       nik,
       email,
       password,
-      nama_lengkap,
+      nama_lengkap: nama,
       role: 1,
-      
+      alamat_domisili,
+      id_kecamatan: id_kecamatan || null,
+      id_kabupaten: id_kabupaten || 1,
     };
 
     const response = await axios.post(

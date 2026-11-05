@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   FileStack
 } from 'lucide-react';
+import LogoutConfirm from '../components/ui/LogoutConfirm';
 import BottomNav from '../components/mobile/BottomNav';
 import MenuItem from '../components/profile/MenuItem';
 import EditProfileModal from '../components/profile/EditProfileModal';
@@ -41,6 +42,7 @@ function ProfilePage() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyType, setPolicyType] = useState('privacy');
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const { reports, fetchReports } = useReportStore();
   const { logout: authLogout } = useAuthStore();
@@ -67,20 +69,23 @@ function ProfilePage() {
   const totalReportsCount = reports.length;
   const completedReportsCount = reports.filter((r) => r.status === 'Selesai').length;
 
-  const handleLogout = () => {
-    if (window.confirm('Yakin ingin keluar dari akun?')) {
-      // 1. Bersihkan session auth Zustand
-      authLogout();
-      // 2. Bersihkan storage sesi
-      sessionStorage.clear();
-      // 3. Bersihkan cache data laporan pengguna
-      useReportStore.getState().clearCache();
-      // 4. Tampilkan pesan berhasil
-      toast.success('Berhasil keluar');
-      // 5. Arahkan user langsung ke menu login
-      navigate('/login', { replace: true });
-    }
+  const handleLogout = () => setLogoutOpen(true);
+
+  const confirmLogout = () => {
+    // 1. Bersihkan session auth Zustand
+    authLogout();
+    // 2. Bersihkan storage sesi
+    sessionStorage.clear();
+    // 3. Bersihkan cache data laporan pengguna
+    useReportStore.getState().clearCache();
+    // 4. Tampilkan pesan berhasil
+    toast.success('Berhasil keluar');
+    // 5. Arahkan user langsung ke menu login
+    navigate('/login', { replace: true });
+    setLogoutOpen(false);
   };
+
+  const cancelLogout = () => setLogoutOpen(false);
 
   const handlePolicyClick = (type) => {
     setPolicyType(type);
@@ -258,6 +263,12 @@ function ProfilePage() {
               Keluar dari Akun
             </button>
           </div>
+          
+          <LogoutConfirm 
+            isOpen={logoutOpen} 
+            onClose={cancelLogout} 
+            onConfirm={confirmLogout} 
+          />
 
           {/* Versi & Hak Cipta */}
           <div className="px-5 mb-4 text-center">
