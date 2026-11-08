@@ -91,14 +91,33 @@ function BottomNav() {
                     <button
                       onClick={handleCameraClick}
                       disabled={processing}
-                      className="flex flex-col items-center disabled:opacity-50"
+                      className="flex flex-col items-center group -mt-7 focus:outline-none disabled:opacity-60 cursor-pointer"
+                      aria-label="Ambil Foto Laporan"
                     >
-                      <span className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center shadow-xl shadow-blue-600/50 ring-4 ring-white -mt-10 transition-transform active:scale-95">
-                        {processing ? (
-                          <Loader2 className="w-5 h-5 text-white animate-spin" />
-                        ) : (
-                          <Icon className="w-5 h-5 text-white" />
-                        )}
+                      {/* BRImo Style Floating Sphere Container */}
+                      <div className="relative p-1 bg-white rounded-full shadow-[0_10px_25px_-3px_rgba(37,99,235,0.45),0_4px_10px_rgba(15,23,42,0.06)] ring-1 ring-slate-100 transition-transform duration-200 group-active:scale-90">
+                        {/* Soft Outer Halo Glow */}
+                        <div className="absolute inset-0 rounded-full bg-blue-600/20 blur-md -z-10 group-hover:bg-blue-600/30 transition-all" />
+
+                        {/* Main Sphere with Gradient */}
+                        <div className="w-13 h-13 rounded-full bg-gradient-to-b from-blue-500 via-blue-600 to-indigo-700 flex items-center justify-center relative overflow-hidden shadow-inner">
+                          {/* Top 3D Gloss Highlight */}
+                          <div className="absolute top-0 inset-x-0 h-1/2 bg-gradient-to-b from-white/35 to-transparent rounded-t-full pointer-events-none" />
+
+                          {/* Concentric Shutter / Fast-Action Lens Ring */}
+                          <div className="w-9 h-9 rounded-full border border-white/30 bg-white/10 flex items-center justify-center backdrop-blur-2xs shadow-[inset_0_1px_2px_rgba(255,255,255,0.4)]">
+                            {processing ? (
+                              <Loader2 className="w-5 h-5 text-white animate-spin" />
+                            ) : (
+                              <Camera className="w-5 h-5 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.25)] stroke-[2.2]" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Micro Label Ala BRImo */}
+                      <span className="text-[10px] font-bold text-blue-600 tracking-tight mt-0.5">
+                        Lapor
                       </span>
                     </button>
                   </div>
