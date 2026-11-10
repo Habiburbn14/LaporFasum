@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { persistedAuthStorage } from '../lib/storage';
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 // *LOGIN
@@ -15,7 +16,7 @@ export const loginUser = async (identifier, password) => {
     );
 
     if (response.data.access_token) {
-      sessionStorage.setItem('access_token', response.data.access_token);
+      await persistedAuthStorage.setItem('access_token', response.data.access_token);
       return { 
         success: true, 
         token: response.data.access_token,
@@ -62,7 +63,7 @@ export const registerUser = async (nama, nik, email, password, alamat_domisili, 
     );
 
     if (response.data.access_token) {
-      sessionStorage.setItem('access_token', response.data.access_token);
+      await persistedAuthStorage.setItem('access_token', response.data.access_token);
       return { success: true, token: response.data.access_token };
     }
     return { success: true, token: null };
@@ -81,16 +82,17 @@ export const registerUser = async (nama, nik, email, password, alamat_domisili, 
 };
 
 // *GET ACCESS TOKEN
-export const getAccessToken = () => {
-  return sessionStorage.getItem('access_token');
+export const getAccessToken = async () => {
+  return persistedAuthStorage.getItem('access_token');
 };
 
 // *IS LOGIN
-export const isLoggedIn = () => {
-  return !!sessionStorage.getItem('access_token');
+export const isLoggedIn = async () => {
+  const token = await persistedAuthStorage.getItem('access_token');
+  return !!token;
 };
 
 // *LOGOUT
-export const logout = () => {
-  sessionStorage.removeItem('access_token');
+export const logout = async () => {
+  await persistedAuthStorage.removeItem('access_token');
 };

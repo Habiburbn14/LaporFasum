@@ -1,7 +1,10 @@
 import axios from 'axios';
-import { getAccessToken } from './authApi';
+import { useAuthStore } from '../stores/useAuthStore';
+import { persistedAuthStorage } from '../lib/storage';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+const getAccessToken = () => useAuthStore.getState().token;
 
 const authHeaders = () => {
   const token = getAccessToken();
@@ -179,7 +182,7 @@ export const submitFeedback = async (feedbackData) => {
 };
 
 export const logoutUser = async () => {
-  localStorage.removeItem('access_token');
+  await persistedAuthStorage.removeItem('access_token');
   return { success: true };
 };
 
