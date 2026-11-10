@@ -65,22 +65,23 @@ function ProfilePage() {
     fetchReports();
   }, [fetchReports]);
 
-  // Statistik dihitung langsung dari data laporan pengguna yang riil
   const totalReportsCount = reports.length;
   const completedReportsCount = reports.filter((r) => r.status === 'Selesai').length;
 
   const handleLogout = () => setLogoutOpen(true);
 
+  const handleProfileUpdate = (updatedData) => {
+    setProfile(prev => ({ ...prev, ...updatedData }));
+    const { updateUser } = useAuthStore.getState();
+    updateUser({ ...useAuthStore.getState().user, ...updatedData });
+    toast.success('Profil berhasil diperbarui');
+  };
+
   const confirmLogout = () => {
-    // 1. Bersihkan session auth Zustand
     authLogout();
-    // 2. Bersihkan storage sesi
     sessionStorage.clear();
-    // 3. Bersihkan cache data laporan pengguna
     useReportStore.getState().clearCache();
-    // 4. Tampilkan pesan berhasil
     toast.success('Berhasil keluar');
-    // 5. Arahkan user langsung ke menu login
     navigate('/login', { replace: true });
     setLogoutOpen(false);
   };
@@ -283,7 +284,7 @@ function ProfilePage() {
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
         profile={profile}
-        onUpdate={setProfile}
+        onUpdate={handleProfileUpdate}
       />
       <ChangePasswordModal
         isOpen={showPasswordModal}

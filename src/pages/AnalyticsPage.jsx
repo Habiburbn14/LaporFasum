@@ -271,18 +271,14 @@ function AnalyticsPage() {
                 </p>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-xs text-blue-100 mb-1">Rata-rata Waktu Respon</p>
-                <p className="text-2xl font-bold">{periodSummary?.avg_response_time || '2.3 hari'}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10">
+                <p className="text-xs font-medium text-blue-100 mb-1">Rata-rata Waktu Respon</p>
+                <p className="text-2xl font-extrabold">{periodSummary?.avg_response_time || '2.3 hari'}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-xs text-blue-100 mb-1">Tingkat Penyelesaian</p>
-                <p className="text-2xl font-bold">{periodSummary?.completion_rate || '96%'}</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                <p className="text-xs text-blue-100 mb-1">Kepuasan Warga</p>
-                <p className="text-2xl font-bold">{periodSummary?.satisfaction || '4.7/5.0'}</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border border-white/10">
+                <p className="text-xs font-medium text-blue-100 mb-1">Tingkat Penyelesaian</p>
+                <p className="text-2xl font-extrabold">{periodSummary?.completion_rate || '96%'}</p>
               </div>
             </div>
           </div>

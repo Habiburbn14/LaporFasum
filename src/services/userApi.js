@@ -82,7 +82,15 @@ export const updateUserProfile = async (updates) => {
     // Refresh profil untuk data sinkron terbaru
     const refreshed = await getUserProfile();
     if (refreshed.success) {
-      return refreshed;
+      return {
+        ...refreshed,
+        data: {
+          ...refreshed.data,
+          nama: updates.nama || refreshed.data.nama,
+          alamat_domisili: updates.lokasi || refreshed.data.alamat_domisili,
+          lokasi: updates.lokasi || refreshed.data.lokasi
+        }
+      };
     }
 
     return { 
