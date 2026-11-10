@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import axios from 'axios';
+import { persistedAuthStorage, clearPersistedAuth } from '../lib/storage';
 
 const baseUrl = import.meta.env.VITE_BASE_URL || '';
 
@@ -50,7 +51,7 @@ export const useAuthStore = create(
       },
 
       login: async (token, userData) => {
-        sessionStorage.setItem('access_token', token);
+        await persistedAuthStorage.setItem('access_token', token);
         set({ token });
         if (userData) {
           set({ user: userData, loading: false });
@@ -60,7 +61,8 @@ export const useAuthStore = create(
       },
 
       logout: () => {
-        sessionStorage.removeItem('access_token');
+        persistedAuthStorage.removeItem('access_token');
+        clearPersistedAuth();
         set({ user: null, token: null, loading: false });
       },
 
@@ -80,12 +82,19 @@ export const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => persistedAuthStorage),
       partialize: (state) => ({ token: state.token, user: state.user }),
-      onRehydrateStorage: () => (state) => {
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Gagal memuat sesi tersimpan:', error);
+          useAuthStore.setState({ loading: false });
+          return;
+        }
         if (state) {
           state.setLoading(false);
           if (state.token) state.fetchUser();
+        } else {
+          useAuthStore.setState({ loading: false });
         }
       },
     }

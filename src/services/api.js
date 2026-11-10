@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../stores/useAuthStore';
 const BASE_URL = import.meta.env.VITE_BASE_URL;
 
 const api = axios.create({
@@ -7,7 +8,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem('access_token');
+  const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -78,6 +79,13 @@ export const trackingAPI = {
 
 export const adminAPI = {
   getDashboard: () => api.get(`/dashboard/admin?_t=${Date.now()}`, {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    }
+  }),
+  getStatistik: () => api.get(`/dashboard/admin/statistik?_t=${Date.now()}`, {
     headers: {
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',

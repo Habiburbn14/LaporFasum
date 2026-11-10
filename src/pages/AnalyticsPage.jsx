@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  TrendingUp, FileText, Clock, CheckCircle2, AlertCircle, Calendar
+  TrendingUp, FileText, Clock, CheckCircle2, AlertCircle, Calendar,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { MOCK_WEEKLY_CHART, MOCK_MONTHLY_CHART, MOCK_FACILITY_CATEGORIES } from '../utils/mockData';
 import WeeklyChart from '../components/mobile/WeeklyChart';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useLaporanList } from '../hooks/useLaporanList';
-import { masterAPI } from '../services/api';
+import { adminAPI } from '../services/api';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import NotificationPopup from '../components/ui/NotificationPopup';
@@ -22,87 +23,12 @@ function AnalyticsPage() {
   const [chartData, setChartData] = useState(null);
   const [chartLoading, setChartLoading] = useState(true);
   const [periodSummary, setPeriodSummary] = useState(null);
-
-  // Fetch chart data from backend
-  const fetchChartData = async () => {
-    try {
-      setChartLoading(true);
-      
-      // Try admin dashboard first, fall back to analytics
-      let res;
-      try {
-        res = await adminAPI.getDashboard();
-      } catch {
-        res = await masterAPI.getAnalytics();
-      }
-      
-      const data = res.data?.data || res.data;
-      
-      const transformToChartFormat = (arr) => {
-        if (!Array.isArray(arr)) return [];
-        return arr.map(item => ({
-          label: item.label || item.tanggal || item.periode || item.hari || item.bulan || item.nama || '',
-          value: Number(item.value || item.jumlah || item.total || item.count || 0)
-        })).filter(item => item.label && !isNaN(item.value));
-      };
-
-      if (data) {
-        const mingguan = transformToChartFormat(data.statistik_harian || data.statistik_mingguan || data.chart_data || data.grafik || []);
-        const bulanan = transformToChartFormat(data.statistik_bulanan || data.statistik_mingguan || data.chart_data || data.grafik || []);
-
-        if (mingguan.length > 0 || bulanan.length > 0) {
-          setChartData({ mingguan, bulanan });
-        } else {
-          setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
-        }
-
-        // Period summary data
-        if (data.ringkasan_periode || data.period_summary || data.summary) {
-          setPeriodSummary(data.ringkasan_periode || data.period_summary || data.summary);
-        }
-      } else {
-        setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
-      }
-    } catch (err) {
-      setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
-    } finally {
-      setChartLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchChartData();
-  }, []);
-
-  const currentChartData = chartData 
-    ? (timeRange === 'mingguan' ? chartData.mingguan : chartData.bulanan)
-    : (timeRange === 'mingguan' ? MOCK_WEEKLY_CHART : MOCK_MONTHLY_CHART);
-
-  const stats = {
-    total: reports.length,
-    menunggu: reports.filter(r => r.status_terkini === 'Menunggu Verifikasi').length,
-    diproses: reports.filter(r => r.status_terkini === 'Diterima').length,
-    selesai: reports.filter(r => r.status_terkini === 'Selesai').length,
-  };
-
-  const categoryStats = MOCK_FACILITY_CATEGORIES.slice(0, 6).map(cat => {
-    const count = reports.filter(r => r.kategori === cat.nama).length;
-    return {
-      nama: cat.nama,
-      count,
-      percentage: reports.length > 0 ? ((count / reports.length) * 100).toFixed(1) : 0,
-      color: cat.color
-    };
-  }).sort((a, b) => b.count - a.count);
-
-  const kecamatanStats = [
-    { nama: 'Lamongan', count: 3 },
-    { nama: 'Sambirejo', count: 2 },
-    { nama: 'Mantup', count: 2 },
-    { nama: 'Sugio', count: 1 },
-    { nama: 'Glagah', count: 1 },
-    { nama: 'Paciran', count: 1 }
-  ];
+  const [stats, setStats] = useState(null);
+  const [kategoriStats, setKategoriStats] = useState([]);
+  const [kecamatanStats, setKecamatanStats] = useState([]);
+  const [showAllCat, setShowAllCat] = useState(false);
+  const [showAllKec, setShowAllKec] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const [logoutOpen, setLogoutOpen] = useState(false);
 
@@ -116,9 +42,15 @@ function AnalyticsPage() {
 
   const cancelLogout = () => setLogoutOpen(false);
 
-  if (loading && reports.length === 0) return <LoadingScreen message="Memuat analytics..." />;
+  const transformToChartFormat = (arr) => {
+    if (!Array.isArray(arr)) return [];
+    return arr.map(item => ({
+      label: item.label || item.tanggal || item.periode || item.hari || item.bulan || item.nama_kecamatan || item.nama || '',
+      value: Number(item.value || item.jumlah || item.total || item.count || 0)
+    })).filter(item => item.label && !isNaN(item.value) && item.label !== '');
+  };
 
-  if (error && reports.length === 0) return <ErrorState message={error} onRetry={reload} />;
+  const numberify = (v) => Number(v) || 0;
 
   const getColorClass = (color) => {
     const colors = {
@@ -128,6 +60,9 @@ function AnalyticsPage() {
       'emerald': 'bg-emerald-100 text-emerald-700',
       'blue': 'bg-blue-100 text-blue-700',
       'violet': 'bg-violet-100 text-violet-700',
+      'red': 'bg-red-100 text-red-700',
+      'pink': 'bg-pink-100 text-pink-700',
+      'slate': 'bg-slate-100 text-slate-700',
     };
     return colors[color] || 'bg-slate-100 text-slate-700';
   };
@@ -140,9 +75,153 @@ function AnalyticsPage() {
       'emerald': 'bg-emerald-500',
       'blue': 'bg-blue-500',
       'violet': 'bg-violet-500',
+      'red': 'bg-red-500',
+      'pink': 'bg-pink-500',
+      'slate': 'bg-slate-500',
     };
     return colors[color] || 'bg-slate-500';
   };
+
+  const getKategoriColor = (nama) => {
+    const cat = MOCK_FACILITY_CATEGORIES.find(c => c.nama === nama);
+    return cat?.color || 'slate';
+  };
+
+  const computeFallbackKategori = () => {
+    const counts = {};
+    reports.forEach(r => {
+      const key = r.nama_kategori || r.kategori || 'Lainnya';
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.entries(counts).map(([nama, count]) => ({
+      nama,
+      count,
+      percentage: reports.length > 0 ? ((count / reports.length) * 100).toFixed(1) : 0,
+      color: getKategoriColor(nama),
+    })).sort((a, b) => b.count - a.count);
+  };
+
+  const computeFallbackKecamatan = () => {
+    const counts = {};
+    reports.forEach(r => {
+      const key = r.nama_kecamatan || r.kecamatan || 'Tidak Diketahui';
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.entries(counts).map(([nama, count], i) => ({
+      nama,
+      count,
+    })).sort((a, b) => b.count - a.count);
+  };
+
+  const fetchStats = async () => {
+    setStatsLoading(true);
+    setChartLoading(true);
+    try {
+      let res;
+      try {
+        res = await adminAPI.getStatistik();
+      } catch {
+        res = await adminAPI.getDashboard();
+      }
+
+      const data = res.data?.data || res.data;
+
+      if (data) {
+        // Chart data
+        const weeklySource = data.statistik_harian || data.statistik_mingguan || data.chart_data || data.grafik || [];
+        const monthlySource = data.statistik_bulanan || data.statistik_mingguan || data.chart_data || data.grafik || [];
+
+        const mingguan = transformToChartFormat(weeklySource);
+        const bulanan = transformToChartFormat(monthlySource);
+
+        if (mingguan.length > 0 || bulanan.length > 0) {
+          setChartData({ 
+            mingguan: mingguan.length > 0 ? mingguan : MOCK_WEEKLY_CHART,
+            bulanan: bulanan.length > 0 ? bulanan : MOCK_MONTHLY_CHART 
+          });
+        } else {
+          setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
+        }
+
+        // Period summary
+        const s = data.ringkasan_periode || data.period_summary || data.summary || data.ringkasan;
+        if (s) setPeriodSummary(s);
+
+        // Stats overview
+        const w = data.statistik_wilayah || data.statistik || data.statistics;
+        if (w) {
+          setStats({
+            total: Number(w.total_laporan ?? w.total ?? w.jumlah ?? 0),
+            menunggu: Number(w.menunggu_verifikasi ?? w.menunggu ?? 0),
+            diproses: Number(w.diproses ?? w.diterima ?? 0),
+            selesai: Number(w.selesai ?? 0),
+          });
+        }
+
+        // Kategori list
+        const catArr = data.statistik_kategori || data.per_kategori || data.kategori || data.laporan_per_kategori;
+        if (Array.isArray(catArr) && catArr.length > 0) {
+          const mapped = catArr.map(c => ({
+            nama: c.nama || c.kategori || c.name,
+            count: Number(c.jumlah ?? c.value ?? c.total ?? c.count ?? 0),
+            percentage: 0,
+            color: getKategoriColor(c.nama || c.kategori || c.name),
+          })).sort((a,b)=>b.count - a.count);
+          const total = mapped.reduce((s,c)=>s+c.count,0);
+          mapped.forEach(c => c.percentage = total > 0 ? ((c.count/total)*100).toFixed(1) : 0);
+          setKategoriStats(mapped);
+        } else {
+          setKategoriStats(computeFallbackKategori());
+        }
+
+        // Kecamatan list
+        const kecArr = data.statistik_kecamatan || data.per_kecamatan || data.kecamatan || data.laporan_per_kecamatan;
+        if (Array.isArray(kecArr) && kecArr.length > 0) {
+          const mapped = kecArr.map((k, i) => ({
+            nama: k.nama_kecamatan || k.kecamatan || k.nama || k.name,
+            count: Number(k.jumlah ?? k.value ?? k.total ?? k.count ?? 0),
+          })).sort((a,b)=>b.count - a.count).map((k,i)=>({...k, rank: i+1}));
+          setKecamatanStats(mapped);
+        } else {
+          const fallback = computeFallbackKecamatan().map((k,i)=>({...k, rank: i+1}));
+          setKecamatanStats(fallback);
+        }
+      } else {
+        // No data at all, use fallbacks
+        setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
+        setKategoriStats(computeFallbackKategori());
+        setKecamatanStats(computeFallbackKecamatan());
+      }
+    } catch (err) {
+      setChartData({ mingguan: MOCK_WEEKLY_CHART, bulanan: MOCK_MONTHLY_CHART });
+      setKategoriStats(computeFallbackKategori());
+      setKecamatanStats(computeFallbackKecamatan());
+    } finally {
+      setStatsLoading(false);
+      setChartLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const currentChartData = chartData 
+    ? (timeRange === 'mingguan' ? chartData.mingguan : chartData.bulanan)
+    : (timeRange === 'mingguan' ? MOCK_WEEKLY_CHART : MOCK_MONTHLY_CHART);
+
+  const statsData = stats || {
+    total: reports.length,
+    menunggu: reports.filter(r => r.status_terkini === 'Menunggu Verifikasi').length,
+    diproses: reports.filter(r => r.status_terkini === 'Diterima').length,
+    selesai: reports.filter(r => r.status_terkini === 'Selesai').length,
+  };
+
+  const displayedCat = showAllCat ? kategoriStats : kategoriStats.slice(0, 6);
+  const displayedKec = showAllKec ? kecamatanStats : kecamatanStats.slice(0, 6);
+
+  if (loading && reports.length === 0) return <LoadingScreen message="Memuat analytics..." />;
+  if (error && reports.length === 0) return <ErrorState message={error} onRetry={reload} />;
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
@@ -218,7 +297,7 @@ function AnalyticsPage() {
                 <TrendingUp className="w-5 h-5 text-emerald-600" />
               </div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Laporan</p>
-              <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total}</p>
+              <p className="text-3xl font-bold text-slate-900 mt-2">{statsData.total}</p>
               <span className="text-xs text-emerald-600 font-medium mt-1 inline-block">↑ +12% dari bulan lalu</span>
             </div>
 
@@ -229,7 +308,7 @@ function AnalyticsPage() {
                 </div>
               </div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Menunggu</p>
-              <p className="text-3xl font-bold text-amber-600 mt-2">{stats.menunggu}</p>
+              <p className="text-3xl font-bold text-amber-600 mt-2">{statsData.menunggu}</p>
               <span className="text-xs text-amber-600 font-medium mt-1 inline-block">! Perlu Verifikasi</span>
             </div>
 
@@ -240,7 +319,7 @@ function AnalyticsPage() {
                 </div>
               </div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Diproses</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{stats.diproses}</p>
+              <p className="text-3xl font-bold text-blue-600 mt-2">{statsData.diproses}</p>
               <span className="text-xs text-blue-600 font-medium mt-1 inline-block">Tim Aktif</span>
             </div>
 
@@ -251,7 +330,7 @@ function AnalyticsPage() {
                 </div>
               </div>
               <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Selesai</p>
-              <p className="text-3xl font-bold text-emerald-600 mt-2">{stats.selesai}</p>
+              <p className="text-3xl font-bold text-emerald-600 mt-2">{statsData.selesai}</p>
               <span className="text-xs text-emerald-600 font-medium mt-1 inline-block">96% Tepat Waktu</span>
             </div>
           </div>
@@ -284,7 +363,7 @@ function AnalyticsPage() {
                   <div className="w-8 h-8 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
                 </div>
               ) : (
-                <WeeklyChart data={currentChartData} width={800} height={220} />
+                <WeeklyChart data={currentChartData} width={600} height={200} />
               )}
             </div>
           </div>
@@ -298,9 +377,21 @@ function AnalyticsPage() {
                   <h2 className="font-bold text-slate-900 text-base">Laporan per Kategori</h2>
                   <p className="text-xs text-slate-500 mt-0.5">Distribusi berdasarkan jenis kerusakan</p>
                 </div>
+                {kategoriStats.length > 6 && (
+                  <button
+                    onClick={() => setShowAllCat(!showAllCat)}
+                    className="text-xs font-medium text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    {showAllCat ? (
+                      <>Tampilkan lebih sedikit <ChevronUp className="w-3 h-3" /></>
+                    ) : (
+                      <>Tampilkan lebih banyak <ChevronDown className="w-3 h-3" /></>
+                    )}
+                  </button>
+                )}
               </div>
               <div className="space-y-4">
-                {categoryStats.map((cat, i) => (
+                {displayedCat.map((cat, i) => (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-1.5">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getColorClass(cat.color)}`}>
@@ -326,13 +417,25 @@ function AnalyticsPage() {
                   <h2 className="font-bold text-slate-900 text-base">Laporan per Kecamatan</h2>
                   <p className="text-xs text-slate-500 mt-0.5">Distribusi berdasarkan wilayah</p>
                 </div>
+                {kecamatanStats.length > 6 && (
+                  <button
+                    onClick={() => setShowAllKec(!showAllKec)}
+                    className="text-xs font-medium text-blue-600 hover:underline flex items-center gap-1"
+                  >
+                    {showAllKec ? (
+                      <>Tampilkan lebih sedikit <ChevronUp className="w-3 h-3" /></>
+                    ) : (
+                      <>Tampilkan lebih banyak <ChevronDown className="w-3 h-3" /></>
+                    )}
+                  </button>
+                )}
               </div>
               <div className="space-y-3">
-                {kecamatanStats.map((kec, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                {displayedKec.map((kec) => (
+                  <div key={kec.nama} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                        {i + 1}
+                        {kec.rank}
                       </div>
                       <span className="text-sm font-medium text-slate-800">{kec.nama}</span>
                     </div>

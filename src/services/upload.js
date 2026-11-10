@@ -1,5 +1,7 @@
+import { useAuthStore } from '../stores/useAuthStore';
+
 export async function uploadLaporan(formData) {
-  const token = sessionStorage.getItem('access_token');
+  const token = useAuthStore.getState().token;
   const baseUrl = import.meta.env.VITE_BASE_URL || '';
   
   const controller = new AbortController();

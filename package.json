@@ -12,7 +12,7 @@
     "start:be": "cd ../projek2 && uvicorn main:app --host 0.0.0.0 --port 8000 --reload",
     "start:fe": "vite --host",
     "start:cap": "npx cap run android --live-reload --host localhost --port 5173",
-    "dev:android": "npm run adb:reverse && concurrently -c \"green,blue,magenta\" -n \"VITE,FASTAPI,CAPACITOR\" \"npm run start:fe\" \"npm run start:cap\""
+    "dev:android": "npm run adb:reverse && concurrently -c \"green,blue,magenta\" -n \"VITE,FASTAPI,CAPACITOR\" \"npm run start:cap\""
   },
   "dependencies": {
     "@capacitor/android": "^8.5.3",

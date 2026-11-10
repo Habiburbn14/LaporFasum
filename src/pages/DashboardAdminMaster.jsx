@@ -9,7 +9,7 @@ import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useLaporanList } from '../hooks/useLaporanList';
-import { laporanAPI, masterAPI, adminAPI } from '../services/api';
+import { adminAPI } from '../services/api';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import NotificationPopup from '../components/ui/NotificationPopup';
@@ -35,17 +35,15 @@ function DashboardAdminMaster() {
     try {
       setChartLoading(true);
       
-      // Try admin dashboard first, fall back to analytics
       let res;
       try {
-        res = await adminAPI.getDashboard();
+        res = await adminAPI.getStatistik();
       } catch {
-        res = await masterAPI.getAnalytics();
+        res = await adminAPI.getDashboard();
       }
 
       const data = res.data?.data || res.data;
       
-      // Transform API data to WeeklyChart format: [{label, value}, ...]
       const transformToChartFormat = (arr) => {
         if (!Array.isArray(arr)) return [];
         return arr.map(item => ({
