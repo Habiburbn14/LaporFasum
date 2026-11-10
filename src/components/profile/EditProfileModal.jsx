@@ -27,7 +27,7 @@ function EditProfileModal({ isOpen, onClose, profile, onUpdate }) {
   useEffect(() => {
     if (profile) {
       setFormData({
-        nama: profile.nama || profile.nama_lengkap || '',
+        nama: profile.nama || '',
         email: profile.email || '',
         lokasi: profile.lokasi || profile.alamat_domisili || ''
       });
@@ -76,7 +76,6 @@ function EditProfileModal({ isOpen, onClose, profile, onUpdate }) {
     setLoading(false);
     
     if (result.success) {
-      toast.success('Profil berhasil diperbarui');
       if (onUpdate) {
         onUpdate(result.data);
       }
