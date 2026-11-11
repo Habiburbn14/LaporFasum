@@ -19,7 +19,7 @@ function ProtectedRoute({ children, roles }) {
   if (!user) {
     return (
       <Navigate
-        to={isAdminPath ? '/admin-login' : '/login'}
+        to="/login"
         replace
         state={{ from: location }}
       />

@@ -42,7 +42,7 @@ function AdminSidebar() {
 
       <div className="p-4 border-t border-slate-800">
         <button 
-          onClick={() => navigate('/admin-login')}
+          onClick={() => navigate('/login')}
           className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 text-red-400 font-medium text-sm transition-colors"
         >
           <LogOut className="w-5 h-5" />

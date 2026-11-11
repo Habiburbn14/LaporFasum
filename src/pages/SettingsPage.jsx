@@ -18,7 +18,7 @@ function SettingsPage() {
 
   const confirmLogout = () => {
     logout();
-    navigate('/admin-login');
+    navigate('/login');
     setLogoutOpen(false);
   };
 
@@ -36,24 +36,29 @@ function SettingsPage() {
 
       {/* Main Content */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="bg-white border-b border-slate-200 h-16 px-8 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">Settings</h1>
-              <p className="text-xs text-slate-500">Kelola preferensi dan konfigurasi akun</p>
-            </div>
+        {/* Modern Top Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 h-16 px-8 flex items-center justify-between sticky top-0 z-20">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Settings</h1>
+            <p className="text-xs text-slate-500">Kelola preferensi dan konfigurasi akun</p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <NotificationPopup />
-            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                {user?.nama?.charAt(0)?.toUpperCase() || 'A'}
+            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                {(user?.nama_lengkap || user?.nama || 'A').charAt(0).toUpperCase()}
               </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama || 'Admin Kabupaten'}</p>
-                <p className="text-[11px] text-slate-500">Dinas PUPR Lamongan</p>
+                <p className="text-xs font-semibold text-slate-900 leading-tight">
+                  {user?.nama_lengkap && user.nama_lengkap !== 'Admin' && user.nama_lengkap !== 'Admin Kabupaten'
+                    ? user.nama_lengkap
+                    : (user?.nama && user.nama !== 'Admin' && user.nama !== 'Admin Kabupaten' ? user.nama : 'Admin Kabupaten Lamongan')}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <p className="text-[10px] text-slate-500">Dinas PUPR Lamongan</p>
+                </div>
               </div>
             </div>
           </div>

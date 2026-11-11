@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye 
+import {
+  Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye
 } from 'lucide-react';
 import { MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART, MOCK_MONTHLY_CHART } from '../utils/mockData';
 import WeeklyChart from '../components/mobile/WeeklyChart';
@@ -34,7 +34,7 @@ function DashboardAdminMaster() {
   const fetchChartData = async () => {
     try {
       setChartLoading(true);
-      
+
       let res;
       try {
         res = await adminAPI.getStatistik();
@@ -43,7 +43,7 @@ function DashboardAdminMaster() {
       }
 
       const data = res.data?.data || res.data;
-      
+
       const transformToChartFormat = (arr) => {
         if (!Array.isArray(arr)) return [];
         return arr.map(item => ({
@@ -103,7 +103,7 @@ function DashboardAdminMaster() {
 
   const confirmLogout = () => {
     logout();
-    navigate('/admin-login');
+    navigate('/login');
     setLogoutOpen(false);
   };
 
@@ -129,88 +129,98 @@ function DashboardAdminMaster() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex font-sans">
+    <div className="min-h-screen bg-[#F8FAFC] flex font-sans selection:bg-blue-100 selection:text-blue-900">
       <AdminSidebar activePath="/admin/master" onLogout={handleLogout} />
-      <LogoutConfirm 
-        isOpen={logoutOpen} 
-        onClose={cancelLogout} 
-        onConfirm={confirmLogout} 
+      <LogoutConfirm
+        isOpen={logoutOpen}
+        onClose={cancelLogout}
+        onConfirm={confirmLogout}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="bg-white border-b border-slate-200 h-16 px-8 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-4 w-96">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search ticket ID, location, or keyword..."
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+        {/* Modern Top Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 h-16 px-8 flex items-center justify-between sticky top-0 z-20">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+            <p className="text-xs text-slate-500">Ringkasan sistem dan laporan infrastruktur</p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <NotificationPopup />
-            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-              <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                {user?.nama?.charAt(0)?.toUpperCase() || 'A'}
+
+            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                {(user?.nama_lengkap || user?.nama || 'A').charAt(0).toUpperCase()}
               </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">{user?.nama_lengkap || user?.nama || 'Admin'}</p>
-                <p className="text-[11px] text-slate-500">{user?.email || 'admin@laporfasum.com'}</p>
+                <p className="text-xs font-semibold text-slate-900 leading-tight">
+                  {user?.nama_lengkap && user.nama_lengkap !== 'Admin' && user.nama_lengkap !== 'Admin Kabupaten'
+                    ? user.nama_lengkap
+                    : (user?.nama && user.nama !== 'Admin' && user.nama !== 'Admin Kabupaten' ? user.nama : 'Admin Kabupaten Lamongan')}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <p className="text-[10px] text-slate-500">Dinas PUPR Lamongan</p>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
         {/* Dashboard Content */}
-        <main className="p-8 space-y-8 max-w-[1400px] w-full mx-auto">
+        <main className="p-8 space-y-7 max-w-[1440px] w-full mx-auto">
           {/* Stats Overview */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-slate-300 transition-all flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Laporan</p>
-                <p className="text-3xl font-bold text-slate-900 mt-2">{stats.total}</p>
-                <span className="text-xs text-emerald-600 font-medium mt-1 inline-block">↑ +12% dari bulan lalu</span>
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Laporan</p>
+                <p className="text-2xl font-bold tracking-tight text-slate-900 font-mono mt-1">{stats.total}</p>
+                <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 inline-block mt-1">
+                  ↑ +12% dari bulan lalu
+                </span>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                <FileText className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/60 flex items-center justify-center text-blue-600">
+                <FileText className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-amber-200 transition-all flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Menunggu Tinjauan</p>
-                <p className="text-3xl font-bold text-amber-600 mt-2">{stats.menunggu}</p>
-                <span className="text-xs text-amber-600 font-medium mt-1 inline-block">! Perlu Aksi Cepat</span>
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Menunggu Tinjauan</p>
+                <p className="text-2xl font-bold tracking-tight text-amber-600 font-mono mt-1">{stats.menunggu}</p>
+                <span className="text-[10px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60 inline-block mt-1">
+                  Perlu Verifikasi
+                </span>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
-                <Clock className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600">
+                <Clock className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-blue-200 transition-all flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sedang Diproses</p>
-                <p className="text-3xl font-bold text-blue-600 mt-2">{stats.diproses}</p>
-                <span className="text-xs text-blue-600 font-medium mt-1 inline-block">Tim Lapangan Aktif</span>
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Sedang Diproses</p>
+                <p className="text-2xl font-bold tracking-tight text-blue-600 font-mono mt-1">{stats.diproses}</p>
+                <span className="text-[10px] font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60 inline-block mt-1">
+                  Tim Lapangan Aktif
+                </span>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                <AlertCircle className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-blue-600">
+                <AlertCircle className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-4 rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.03)] hover:border-emerald-200 transition-all flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Selesai Diperbaiki</p>
-                <p className="text-3xl font-bold text-emerald-600 mt-2">{stats.selesai}</p>
-                <span className="text-xs text-emerald-600 font-medium mt-1 inline-block">96% Tepat Waktu</span>
+                <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Selesai</p>
+                <p className="text-2xl font-bold tracking-tight text-emerald-600 font-mono mt-1">{stats.selesai}</p>
+                <span className="text-[10px] font-medium text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60 inline-block mt-1">
+                  96% Tuntas
+                </span>
               </div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                <CheckCircle2 className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600">
+                <CheckCircle2 className="w-5 h-5" />
               </div>
             </div>
           </div>
@@ -225,19 +235,17 @@ function DashboardAdminMaster() {
                   <p className="text-xs text-slate-500 mt-0.5">Statistik pengaduan infrastruktur di Kabupaten Lamongan</p>
                 </div>
                 <div className="flex bg-slate-100 rounded-full p-1">
-                  <button 
+                  <button
                     onClick={() => setTimeRange('mingguan')}
-                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${
-                      timeRange === 'mingguan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${timeRange === 'mingguan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                      }`}
                   >
                     Mingguan
                   </button>
-                  <button 
+                  <button
                     onClick={() => setTimeRange('bulanan')}
-                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${
-                      timeRange === 'bulanan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    className={`text-xs font-medium px-3 py-1 rounded-full transition-all ${timeRange === 'bulanan' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                      }`}
                   >
                     Bulanan
                   </button>
@@ -264,25 +272,25 @@ function DashboardAdminMaster() {
                 <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2.5 py-1 rounded-full">Live GIS</span>
               </div>
               <div className="flex-1 rounded-xl overflow-hidden min-h-[220px] relative border border-slate-200">
-                <MapContainer 
-                  center={[-7.169249504786527, 112.33849173392773]} 
-                  zoom={11} 
+                <MapContainer
+                  center={[-7.169249504786527, 112.33849173392773]}
+                  zoom={11}
                   style={{ height: '100%', width: '100%' }}
                   zoomControl={false}
                   attributionControl={false}
                   whenCreated={(map) => { window.mapRef = map; }}
                 >
                   <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                  
+
                   {lamonganBoundary && (
                     <GeoJSON
                       data={lamonganBoundary}
                       style={{
-                        color: '#ef4444',
-                        weight: 2,
+                        color: '#EF4444',
+                        weight: 2.5,
                         opacity: 1,
-                        fillColor: '#ef4444',
-                        fillOpacity: 0.15,
+                        fillColor: '#EF4444',
+                        fillOpacity: 0.05,
                         lineCap: 'round',
                         lineJoin: 'round',
                       }}
@@ -368,7 +376,7 @@ function DashboardAdminMaster() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-right">
-                        <button 
+                        <button
                           onClick={() => setSelectedReport(r)}
                           className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition-colors"
                           title="Lihat Detail"
@@ -395,7 +403,7 @@ function DashboardAdminMaster() {
               <div className="bg-white rounded-2xl max-w-4xl w-full p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <h3 className="font-bold text-slate-900 text-lg">Detail Laporan - {selectedReport.id_laporan}</h3>
-                  <button 
+                  <button
                     onClick={() => setSelectedReport(null)}
                     className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200"
                   >
@@ -406,8 +414,8 @@ function DashboardAdminMaster() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Photo */}
                   <div className="relative">
-                    <img 
-                      src={selectedReport.foto_bukti} 
+                    <img
+                      src={selectedReport.foto_bukti}
                       alt={selectedReport.judul_laporan}
                       className="w-full h-64 object-cover rounded-xl"
                     />
@@ -431,8 +439,8 @@ function DashboardAdminMaster() {
                     <div>
                       <p className="text-xs text-slate-400 uppercase font-bold">Tanggal</p>
                       <p className="text-sm text-slate-700 mt-1">
-                        {new Date(selectedReport.tanggal || selectedReport.created_at).toLocaleDateString('id-ID', { 
-                          day: 'numeric', month: 'long', year: 'numeric' 
+                        {new Date(selectedReport.tanggal || selectedReport.created_at).toLocaleDateString('id-ID', {
+                          day: 'numeric', month: 'long', year: 'numeric'
                         })}
                       </p>
                     </div>
@@ -465,7 +473,7 @@ function DashboardAdminMaster() {
           {/* View All Link */}
           {displayedReports.length > 0 && filteredReports.length > displayedReports.length && (
             <div className="text-center pt-4">
-              <button 
+              <button
                 onClick={() => setShowAll(!showAll)}
                 className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 mx-auto"
               >
@@ -481,7 +489,7 @@ function DashboardAdminMaster() {
 }
 
 function getStatusColor(status) {
-  switch(status) {
+  switch (status) {
     case 'Menunggu Verifikasi': return 'bg-amber-50 text-amber-700';
     case 'Diterima': return 'bg-blue-50 text-blue-700';
     case 'Selesai': return 'bg-emerald-50 text-emerald-700';
@@ -491,7 +499,7 @@ function getStatusColor(status) {
 }
 
 function getStatusDotColor(status) {
-  switch(status) {
+  switch (status) {
     case 'Menunggu Verifikasi': return 'bg-amber-500';
     case 'Diterima': return 'bg-blue-500';
     case 'Selesai': return 'bg-emerald-500';

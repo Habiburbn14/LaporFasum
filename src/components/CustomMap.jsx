@@ -232,11 +232,11 @@ function CustomMap({
             return feature.geometry && feature.geometry.type !== 'Point';
           },
           style: {
-            color: '#ef4444',       // Garis merah mencolok
-            weight: 3.5,            // Ketebalan garis
+            color: '#EF4444',       // Garis batas merah
+            weight: 3,              // Ketebalan tegas
             opacity: 1,             // Garis solid
-            fillColor: '#ef4444',   // Warna dalam area
-            fillOpacity: 0.03,      // Transparan lembut agar peta tetap bersih dan jelas
+            fillColor: '#EF4444',   // Warna dalam area
+            fillOpacity: 0.02,      // Transparan lembut
             lineCap: 'round',
             lineJoin: 'round',
           },

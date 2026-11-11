@@ -81,6 +81,59 @@ export const registerUser = async (nama, nik, email, password, alamat_domisili, 
   }
 };
 
+// *VERIFIKASI AKUN LUPA SANDI (NIK + Email)
+export const verifyResetAccount = async (nik, email) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/auth/verify-reset`,
+      { nik, email },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return { success: true, data: response.data };
+  } catch (error) {
+    let errorMessage = 'Verifikasi akun gagal';
+    const detail = error.response?.data?.detail;
+    if (typeof detail === 'string') {
+      errorMessage = detail;
+    } else if (Array.isArray(detail)) {
+      errorMessage = detail.map(d => d.msg || d.message).join(', ');
+    }
+    return { success: false, error: errorMessage };
+  }
+};
+
+// *RESET KATA SANDI BARU
+export const resetPassword = async (nik, email, newPassword) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/auth/reset-password`,
+      { nik, email, new_password: newPassword },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return { 
+      success: true, 
+      message: response.data?.message || 'Kata sandi berhasil diperbarui' 
+    };
+  } catch (error) {
+    let errorMessage = 'Gagal mereset kata sandi';
+    const detail = error.response?.data?.detail;
+    if (typeof detail === 'string') {
+      errorMessage = detail;
+    } else if (Array.isArray(detail)) {
+      errorMessage = detail.map(d => d.msg || d.message).join(', ');
+    }
+    return { success: false, error: errorMessage };
+  }
+};
+
 // *GET ACCESS TOKEN
 export const getAccessToken = async () => {
   return persistedAuthStorage.getItem('access_token');
