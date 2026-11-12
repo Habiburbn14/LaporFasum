@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getRoadNetwork } from '../services/userApi';
 
 // Fix Leaflet marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -10,66 +11,113 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-export const SCALA_LAYERS = {
-  arteriPrimer: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20240709_174127/Jalan%20Arteri%20Primer.geojson',
-    color: '#ef4444',
-    name: 'Arteri Primer',
-    weight: 3.5,
+export const ROAD_LAYERS = {
+  // Old endpoints (keep for backward compatibility)
+  nasional: {
+    color: '#dc2626',
+    name: 'Jalan Nasional',
+    weight: 4,
+    count: '—',
+    endpoint: 'nasional',
   },
-  kolektorPrimer1: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20240709_174127/Jalan%20Kolektor%20Primer%20Satu%20(JKP-1).geojson',
+  provinsi: {
     color: '#3b82f6',
-    name: 'Kolektor Primer 1',
+    name: 'Jalan Provinsi',
     weight: 3,
+    count: '—',
+    endpoint: 'provinsi',
   },
-  kolektorPrimer2: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20240709_174127/Jalan%20Kolektor%20Primer%20Dua%20(JKP-2).geojson',
-    color: '#2563eb',
-    name: 'Kolektor Primer 2',
-    weight: 2.5,
-  },
-  kolektorPrimer3: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20240709_174127/Jalan%20Kolektor%20Primer%20Tiga%20(JKP-3).geojson',
-    color: '#1d4ed8',
-    name: 'Kolektor Primer 3',
-    weight: 2.5,
-  },
-  arteriSecondary: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20260510_033012/Arteri%20Sekunder.geojson',
+  kabupaten: {
     color: '#f97316',
-    name: 'Arteri Sekunder',
+    name: 'Jalan Kabupaten',
     weight: 2.5,
+    count: '—',
+    endpoint: 'kabupaten',
   },
-  kolektorSecondary: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20260510_033012/Kolektor%20Sekunder.geojson',
-    color: '#ea580c',
-    name: 'Kolektor Sekunder',
-    weight: 2.5,
-  },
-  lingkunganPrimary: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20260510_033012/Lingkungan%20Primer.geojson',
+  kecamatan: {
     color: '#10b981',
-    name: 'Lingkungan Primer',
+    name: 'Jalan Kecamatan',
     weight: 2,
+    count: '—',
+    endpoint: 'kecamatan',
   },
-  lingkunganSecondary: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20260510_033012/Lingkungan%20Sekunder.geojson',
-    color: '#059669',
-    name: 'Lingkungan Sekunder',
+  // New 11 endpoints
+  'arteri-primer': {
+    color: '#dc2626',
+    name: 'Jalan Arteri Primer',
+    weight: 4,
+    count: '—',
+    endpoint: 'arteri-primer',
+  },
+  'kolektor-primer-1': {
+    color: '#ef4444',
+    name: 'Jalan Kolektor Primer 1',
+    weight: 3.5,
+    count: '—',
+    endpoint: 'kolektor-primer-1',
+  },
+  'kolektor-primer-2': {
+    color: '#f97316',
+    name: 'Jalan Kolektor Primer 2',
+    weight: 3.5,
+    count: '—',
+    endpoint: 'kolektor-primer-2',
+  },
+  'kolektor-primer-3': {
+    color: '#fb923c',
+    name: 'Jalan Kolektor Primer 3',
+    weight: 3,
+    count: '—',
+    endpoint: 'kolektor-primer-3',
+  },
+  'arteri-sekunder': {
+    color: '#f59e0b',
+    name: 'Jalan Arteri Sekunder',
+    weight: 3,
+    count: '—',
+    endpoint: 'arteri-sekunder',
+  },
+  'kolektor-primer-4': {
+    color: '#fde047',
+    name: 'Jalan Kolektor Primer 4',
+    weight: 2.5,
+    count: '—',
+    endpoint: 'kolektor-primer-4',
+  },
+  'kolektor-sekunder': {
+    color: '#a3e635',
+    name: 'Jalan Kolektor Sekunder',
+    weight: 2.5,
+    count: '—',
+    endpoint: 'kolektor-sekunder',
+  },
+  'lingkungan-primer': {
+    color: '#4ade80',
+    name: 'Jalan Lingkungan Primer',
     weight: 2,
+    count: '—',
+    endpoint: 'lingkungan-primer',
   },
-  lokalPrimary: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20260510_033012/Lokal%20Primer.geojson',
-    color: '#64748b',
-    name: 'Lokal Primer',
-    weight: 1.5,
+  'lingkungan-sekunder': {
+    color: '#22c55e',
+    name: 'Jalan Lingkungan Sekunder',
+    weight: 2,
+    count: '—',
+    endpoint: 'lingkungan-sekunder',
   },
-  lokalSecondary: {
-    url: 'https://skala.lamongankab.go.id/peta/geojsons/20260510_033012/Lokal%20Sekunder.geojson',
-    color: '#475569',
-    name: 'Lokal Sekunder',
+  'lokal-primer': {
+    color: '#06b6d4',
+    name: 'Jalan Lokal Primer',
     weight: 1.5,
+    count: '—',
+    endpoint: 'lokal-primer',
+  },
+  'lokal-sekunder': {
+    color: '#0ea5e9',
+    name: 'Jalan Lokal Sekunder',
+    weight: 1.5,
+    count: '—',
+    endpoint: 'lokal-sekunder',
   },
 };
 
@@ -80,6 +128,9 @@ function CustomMap({
   onResetFocus,
   onMarkerClick,
   selectedReport,
+  onLocationFound,
+  onLocationError,
+  onLayerLoadingChange,
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -87,6 +138,7 @@ function CustomMap({
   const boundaryLayerRef = useRef(null);
   const markersRef = useRef([]);
   const userLocationMarkerRef = useRef(null);
+  const lastFocusTriggerRef = useRef(null);
   const [userCoords, setUserCoords] = useState(null);
 
   // Pantau lokasi GPS pengguna secara live (Real-time GPS User Dot)
@@ -232,10 +284,10 @@ function CustomMap({
             return feature.geometry && feature.geometry.type !== 'Point';
           },
           style: {
-            color: '#ef4444',       // Garis merah mencolok
+            color: '#2563eb',       // Garis biru mencolok (sesuai theme)
             weight: 3.5,            // Ketebalan garis
             opacity: 1,             // Garis solid
-            fillColor: '#ef4444',   // Warna dalam area
+            fillColor: '#2563eb',   // Warna dalam area
             fillOpacity: 0.03,      // Transparan lembut agar peta tetap bersih dan jelas
             lineCap: 'round',
             lineJoin: 'round',
@@ -265,26 +317,51 @@ function CustomMap({
   // Expose reset focus handler jika di-trigger oleh parent (Tombol Crosshair)
   useEffect(() => {
     if (!onResetFocus || !mapInstanceRef.current) return;
+    
+    // Prevent duplicate triggers
+    if (lastFocusTriggerRef.current === onResetFocus) return;
+    lastFocusTriggerRef.current = onResetFocus;
 
-    if (userCoords?.lat && userCoords?.lng) {
-      mapInstanceRef.current.setView([userCoords.lat, userCoords.lng], 16, {
-        animate: true,
-      });
-      return;
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          setUserCoords({ lat, lng });
+          if (mapInstanceRef.current) {
+            mapInstanceRef.current.setView([lat, lng], 16, { animate: true });
+          }
+          if (onLocationFound) {
+            onLocationFound({ lat, lng });
+          }
+        },
+        (err) => {
+          console.warn('Gagal mendapatkan lokasi akurat:', err.message);
+          if (userCoords?.lat && userCoords?.lng && mapInstanceRef.current) {
+            mapInstanceRef.current.setView([userCoords.lat, userCoords.lng], 16, { animate: true });
+            if (onLocationFound) {
+              onLocationFound(userCoords);
+            }
+          } else {
+            if (onLocationError) {
+              onLocationError(err);
+            }
+            if (boundaryLayerRef.current && mapInstanceRef.current) {
+              const bounds = boundaryLayerRef.current.getBounds();
+              if (bounds.isValid()) {
+                mapInstanceRef.current.fitBounds(bounds, { padding: [20, 20], animate: true });
+              }
+            }
+          }
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
+      );
+    } else if (userCoords?.lat && userCoords?.lng) {
+      mapInstanceRef.current.setView([userCoords.lat, userCoords.lng], 16, { animate: true });
     }
+  }, [onResetFocus]);
 
-    if (boundaryLayerRef.current) {
-      const bounds = boundaryLayerRef.current.getBounds();
-      if (bounds.isValid()) {
-        mapInstanceRef.current.fitBounds(bounds, {
-          padding: [20, 20],
-          animate: true,
-        });
-      }
-    }
-  }, [onResetFocus, userCoords]);
-
-  // Load dan Kelola Layer Jalan SCALA (Navigasi Jalan)
+  // Load dan Kelola Layer Jalan (Fetch dari API)
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
@@ -305,36 +382,71 @@ function CustomMap({
     activeKeys.forEach((layerKey) => {
       if (layersRef.current[layerKey]) return;
 
-      const layerConfig = SCALA_LAYERS[layerKey];
+      const layerConfig = ROAD_LAYERS[layerKey];
       if (!layerConfig) return;
 
-      fetch(layerConfig.url)
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.json();
-        })
-        .then((geojsonData) => {
+      if (onLayerLoadingChange) {
+        onLayerLoadingChange(layerKey, true);
+      }
+
+      getRoadNetwork(layerKey)
+        .then((result) => {
           if (!mapInstanceRef.current) return;
           if (!activeLayers[layerKey]) return;
 
-          const roadLayer = L.geoJSON(geojsonData, {
-            style: {
-              color: layerConfig.color,
-              weight: layerConfig.weight,
-              opacity: 0.85,
-              lineCap: 'round',
-              lineJoin: 'round',
-            },
-          });
+          if (result.success && result.data) {
+            const jalanData = result.data;
+            
+            if (Array.isArray(jalanData) && jalanData.length > 0) {
+              const layerGroup = L.featureGroup();
+              
+              jalanData.forEach((jalan) => {
+                if (jalan.koordinat && Array.isArray(jalan.koordinat) && jalan.koordinat.length > 0) {
+                  const latlngs = jalan.koordinat
+                    .map((koord) => {
+                      const lat = parseFloat(koord.latitude);
+                      const lng = parseFloat(koord.longitude);
+                      return [lat, lng];
+                    })
+                    .filter((coord) => !isNaN(coord[0]) && !isNaN(coord[1]));
+                  
+                  if (latlngs.length < 2) return;
+                  
+                  const line = L.polyline(latlngs, {
+                    color: layerConfig.color,
+                    weight: layerConfig.weight,
+                    opacity: 0.85,
+                    lineCap: 'round',
+                    lineJoin: 'round',
+                  });
+                  
+                  line.bindTooltip(jalan.nama_jalan || jalan.detail || 'Jalan', {
+                    direction: 'top',
+                    offset: [0, -10],
+                    className: 'bg-slate-900 text-white text-xs px-2 py-1 rounded shadow font-sans'
+                  });
+                  
+                  line.addTo(layerGroup);
+                }
+              });
+              
+              layerGroup.addTo(map);
+              layersRef.current[layerKey] = layerGroup;
+            }
+          }
 
-          roadLayer.addTo(map);
-          layersRef.current[layerKey] = roadLayer;
+          if (onLayerLoadingChange) {
+            onLayerLoadingChange(layerKey, false);
+          }
         })
         .catch((err) => {
           console.warn(`Layer jalan ${layerConfig.name} tidak dapat dimuat:`, err);
+          if (onLayerLoadingChange) {
+            onLayerLoadingChange(layerKey, false);
+          }
         });
     });
-  }, [activeLayers]);
+  }, [activeLayers, onLayerLoadingChange]);
 
   // Titik Lokasi Laporan Warga (Interactive Pulse Markers)
   useEffect(() => {

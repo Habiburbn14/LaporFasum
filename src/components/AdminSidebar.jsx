@@ -3,6 +3,7 @@ import {
   LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../stores/useAuthStore';
 
 const NAV_ITEMS = [
   { path: '/admin/master', label: 'Dashboard', icon: LayoutDashboard },
@@ -12,8 +13,14 @@ const NAV_ITEMS = [
   { path: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
-export function AdminSidebar({ activePath, onLogout }) {
+export function AdminSidebar({ activePath }) {
   const navigate = useNavigate();
+  const logout = useAuthStore((state) => state.logout);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col fixed inset-y-0 z-20">
@@ -49,7 +56,7 @@ export function AdminSidebar({ activePath, onLogout }) {
 
       <div className="p-4 border-t border-slate-800">
         <button
-          onClick={onLogout}
+          onClick={handleLogout}
           className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 text-red-400 font-medium text-sm transition-colors"
         >
           <LogOut className="w-5 h-5" />

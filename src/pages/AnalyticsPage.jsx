@@ -13,11 +13,10 @@ import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import NotificationPopup from '../components/ui/NotificationPopup';
 import AdminSidebar from '../components/AdminSidebar';
-import LogoutConfirm from '../components/ui/LogoutConfirm';
 
 function AnalyticsPage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { reports, loading, error, reload } = useLaporanList();
   const [timeRange, setTimeRange] = useState('mingguan');
   const [chartData, setChartData] = useState(null);
@@ -29,18 +28,6 @@ function AnalyticsPage() {
   const [showAllCat, setShowAllCat] = useState(false);
   const [showAllKec, setShowAllKec] = useState(false);
   const [statsLoading, setStatsLoading] = useState(true);
-
-  const [logoutOpen, setLogoutOpen] = useState(false);
-
-  const handleLogout = () => setLogoutOpen(true);
-
-  const confirmLogout = () => {
-    logout();
-    navigate('/admin-login');
-    setLogoutOpen(false);
-  };
-
-  const cancelLogout = () => setLogoutOpen(false);
 
   const transformToChartFormat = (arr) => {
     if (!Array.isArray(arr)) return [];
@@ -226,12 +213,7 @@ function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
       {/* Sidebar */}
-      <AdminSidebar activePath="/admin/analytics" onLogout={handleLogout} />
-      <LogoutConfirm 
-        isOpen={logoutOpen} 
-        onClose={() => setLogoutOpen(false)} 
-        onConfirm={confirmLogout} 
-      />
+      <AdminSidebar activePath="/admin/analytics" />
 
       {/* Main Content */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">

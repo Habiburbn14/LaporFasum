@@ -9,16 +9,14 @@ import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useLaporanList } from '../hooks/useLaporanList';
-import { adminAPI } from '../services/api';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import NotificationPopup from '../components/ui/NotificationPopup';
 import AdminSidebar from '../components/AdminSidebar';
-import LogoutConfirm from '../components/ui/LogoutConfirm';
 
 function DashboardAdminMaster() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const { reports, loading, error, reload } = useLaporanList();
   const [searchCategory, setSearchCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -97,20 +95,6 @@ function DashboardAdminMaster() {
 
   const displayedReports = showAll ? filteredReports : filteredReports.slice(0, 10);
 
-  const handleLogout = () => {
-    setLogoutOpen(true);
-  };
-
-  const confirmLogout = () => {
-    logout();
-    navigate('/admin-login');
-    setLogoutOpen(false);
-  };
-
-  const cancelLogout = () => {
-    setLogoutOpen(false);
-  };
-
   if (loading && reports.length === 0) return <LoadingScreen message="Memuat dashboard..." />;
 
   if (error && reports.length === 0) return <ErrorState message={error} onRetry={reload} />;
@@ -130,12 +114,7 @@ function DashboardAdminMaster() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
-      <AdminSidebar activePath="/admin/master" onLogout={handleLogout} />
-      <LogoutConfirm 
-        isOpen={logoutOpen} 
-        onClose={cancelLogout} 
-        onConfirm={confirmLogout} 
-      />
+      <AdminSidebar activePath="/admin/master" />
 
       {/* Main Content Area */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">

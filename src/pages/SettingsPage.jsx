@@ -6,33 +6,16 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import AdminSidebar from '../components/AdminSidebar';
 import NotificationPopup from '../components/ui/NotificationPopup';
-import LogoutConfirm from '../components/ui/LogoutConfirm';
 
 function SettingsPage() {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
+  const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState('profile');
-  const [logoutOpen, setLogoutOpen] = useState(false);
-
-  const handleLogout = () => setLogoutOpen(true);
-
-  const confirmLogout = () => {
-    logout();
-    navigate('/admin-login');
-    setLogoutOpen(false);
-  };
-
-  const cancelLogout = () => setLogoutOpen(false);
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
       {/* Sidebar */}
-      <AdminSidebar activePath="/admin/settings" onLogout={handleLogout} />
-      <LogoutConfirm 
-        isOpen={logoutOpen} 
-        onClose={() => setLogoutOpen(false)} 
-        onConfirm={confirmLogout} 
-      />
+      <AdminSidebar activePath="/admin/settings" />
 
       {/* Main Content */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">

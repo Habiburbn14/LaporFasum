@@ -275,3 +275,27 @@ export const getMapPoints = async () => {
     return { success: false, error: error.response?.data?.detail || 'Gagal memuat titik peta' };
   }
 };
+
+export const getRoadNetwork = async (endpoint) => {
+  try {
+    const response = await axios.get(
+      `${BASE_URL}/master/jalan/${endpoint}`,
+      { headers: authHeaders() }
+    );
+    
+    const data = response.data?.data || response.data;
+    const pagination = response.data?.pagination;
+    
+    return { 
+      success: true, 
+      data: data,
+      count: Array.isArray(data) ? data.length : 0,
+      pagination: pagination
+    };
+  } catch (error) {
+    if (error.response && error.response.status === 401) {
+      throw new Error('unauthorized');
+    }
+    return { success: false, error: error.response?.data?.detail || `Gagal memuat jalan ${endpoint}` };
+  }
+};

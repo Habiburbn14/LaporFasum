@@ -1,18 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  Layers, X, ChevronDown, Crosshair, Route, Globe, User, AlertCircle, MapPin, Eye
+  Layers, X, ChevronDown, Crosshair, Route, Globe, User, AlertCircle, MapPin, Eye, Loader2
 } from 'lucide-react';
 import { MapContainer, TileLayer, ZoomControl, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate, useLocation } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import BottomNav from '../components/mobile/BottomNav';
-import CustomMap from '../components/CustomMap';
+import CustomMap, { ROAD_LAYERS } from '../components/CustomMap';
 import { useReportStore } from '../stores/useReportStore';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 import { getErrorMessage } from '../utils/error';
 import AdminSidebar from '../components/AdminSidebar';
 import NotificationPopup from '../components/ui/NotificationPopup';
+import { getRoadNetwork } from '../services/userApi';
 
 const STATUS_STYLES = {
   'Menunggu Verifikasi': 'bg-amber-100 text-amber-700 border-amber-200/60',
@@ -40,18 +42,17 @@ function GISMapViewPage() {
   const [baseMap, setBaseMap] = useState('openstreetmap');
   const [resetFocusTrigger, setResetFocusTrigger] = useState(0);
   const [selectedReportOnMap, setSelectedReportOnMap] = useState(null);
-  const [activeLayers, setActiveLayers] = useState({
-    arteriPrimer: false,
-    kolektorPrimer1: false,
-    kolektorPrimer2: false,
-    kolektorPrimer3: false,
-    arteriSecondary: false,
-    kolektorSecondary: false,
-    lingkunganPrimary: false,
-    lingkunganSecondary: false,
-    lokalPrimary: false,
-    lokalSecondary: false,
-  });
+  const [layerLoading, setLayerLoading] = useState({});
+  const [layerCounts, setLayerCounts] = useState({});
+  
+  // Initialize activeLayers from ROAD_LAYERS keys
+  const initialActiveLayers = useMemo(() => {
+    const layers = {};
+    Object.keys(ROAD_LAYERS).forEach(key => { layers[key] = false; });
+    return layers;
+  }, []);
+  
+  const [activeLayers, setActiveLayers] = useState(initialActiveLayers);
 
   const { reports, mapReports, fetchReports, fetchAllReports, fetchMapPoints } = useReportStore();
 
@@ -59,9 +60,9 @@ function GISMapViewPage() {
   const center = [-7.169249504786527, 112.33849173392773];
   const zoom = 11;
 
-  // Boundary style - red outline, transparent fill (Admin)
+  // Boundary style - blue outline, transparent fill (Admin, sesuai theme)
   const boundaryStyle = {
-    color: '#ef4444',
+    color: '#2563eb',
     weight: 3,
     opacity: 1,
     fillOpacity: 0,
@@ -113,6 +114,47 @@ function GISMapViewPage() {
     }));
   };
 
+  // Fetch count dynamically when layer is checked/loaded
+  const handleLayerLoadingChange = useCallback((layerKey, isLoading) => {
+    setLayerLoading((prev) => ({
+      ...prev,
+      [layerKey]: isLoading,
+    }));
+  }, []);
+
+  // Update counts when data arrives from CustomMap or fetch directly
+  const fetchLayerCount = useCallback(async (layerKey) => {
+    if (layerCounts[layerKey] !== undefined) return;
+    try {
+      const res = await getRoadNetwork(layerKey);
+      if (res.success && res.pagination?.total !== undefined) {
+        setLayerCounts(prev => ({ ...prev, [layerKey]: `${res.pagination.total} jalan` }));
+      } else if (res.success && Array.isArray(res.data)) {
+        setLayerCounts(prev => ({ ...prev, [layerKey]: `${res.data.length} jalan` }));
+      }
+    } catch {
+      // ignore
+    }
+  }, [layerCounts]);
+
+  const handleLocationFound = useCallback((coords) => {
+    toast.dismiss('gps-locating');
+    toast.success(`Lokasi ditemukan: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+  }, []);
+
+  const handleLocationError = useCallback((err) => {
+    toast.dismiss('gps-locating');
+    let errorMsg = 'GPS tidak tersedia';
+    if (err.code === 1) {
+      errorMsg = 'Izin GPS ditolak. Aktifkan di pengaturan perangkat';
+    } else if (err.code === 2) {
+      errorMsg = 'Lokasi tidak dapat ditemukan. Cek sinyal GPS';
+    } else if (err.code === 3) {
+      errorMsg = 'Timeout mencari lokasi. Coba lagi';
+    }
+    toast.error(errorMsg);
+  }, []);
+
   const getStatusStyle = (status) => {
     return STATUS_STYLES[status] || 'bg-slate-100 text-slate-700 border-slate-200';
   };
@@ -154,11 +196,6 @@ function GISMapViewPage() {
               >
                 <Globe className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">Semua</span>
-                {reportFilter === 'all' && totalCount > 0 && (
-                  <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full font-bold">
-                    {totalCount}
-                  </span>
-                )}
               </button>
               <button
                 onClick={() => {
@@ -184,9 +221,12 @@ function GISMapViewPage() {
             {/* Quick Actions (Focus & Layer Settings) - Tetap persis seperti SS user */}
             <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200/80 shrink-0">
               <button
-                onClick={() => setResetFocusTrigger(Date.now())}
+                onClick={() => {
+                  toast.loading('Mencari lokasi Anda...', { id: 'gps-locating', duration: 1500 });
+                  setResetFocusTrigger(Date.now());
+                }}
                 className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-600 hover:text-blue-600 hover:bg-slate-100 active:scale-95 transition-all"
-                title="Pusatkan Peta ke Lamongan"
+                title="Pusatkan Peta ke Lokasi Saat Ini"
               >
                 <Crosshair className="w-4 h-4" />
               </button>
@@ -247,111 +287,49 @@ function GISMapViewPage() {
                 </div>
               </div>
 
-              {/* Garis merah membingkai batas resmi Kabupaten Lamongan */}
-              <div className="p-2.5 rounded-xl bg-red-50/70 border border-red-200/80 mb-4 flex items-center gap-2.5">
-                <span className="w-3.5 h-1.5 bg-red-500 rounded-sm shrink-0" />
-                <p className="text-xs text-red-800 font-medium leading-tight">
-                  Garis merah membingkai batas resmi Kabupaten Lamongan
+              {/* Garis biru membingkai batas resmi Kabupaten Lamongan */}
+              <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-200/80 mb-4 flex items-center gap-2.5">
+                <span className="w-3.5 h-1.5 bg-blue-600 rounded-sm shrink-0" />
+                <p className="text-xs text-blue-800 font-medium leading-tight">
+                  Garis biru membingkai batas resmi Kabupaten Lamongan
                 </p>
               </div>
 
-              {/* PILIHAN RUAS JALAN (SCALA) */}
+              {/* PILIHAN RUAS JALAN */}
               <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pilihan Ruas Jalan (SCALA)</p>
-                <div className="space-y-1.5 pr-1">
-                  <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-3 h-3 rounded-full bg-red-500 shrink-0" />
-                      <span className="text-xs font-medium text-slate-700">Jalan Arteri Primer</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={activeLayers.arteriPrimer}
-                      onChange={() => toggleLayer('arteriPrimer')}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-3 h-3 rounded-full bg-blue-500 shrink-0" />
-                      <span className="text-xs font-medium text-slate-700">Jalan Kolektor Primer</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={activeLayers.kolektorPrimer1 || activeLayers.kolektorPrimer2 || activeLayers.kolektorPrimer3}
-                      onChange={() => {
-                        const val = !(activeLayers.kolektorPrimer1 || activeLayers.kolektorPrimer2 || activeLayers.kolektorPrimer3);
-                        setActiveLayers((prev) => ({
-                          ...prev,
-                          kolektorPrimer1: val,
-                          kolektorPrimer2: val,
-                          kolektorPrimer3: val,
-                        }));
-                      }}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-3 h-3 rounded-full bg-orange-500 shrink-0" />
-                      <span className="text-xs font-medium text-slate-700">Jalan Sekunder</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={activeLayers.arteriSecondary || activeLayers.kolektorSecondary}
-                      onChange={() => {
-                        const val = !(activeLayers.arteriSecondary || activeLayers.kolektorSecondary);
-                        setActiveLayers((prev) => ({
-                          ...prev,
-                          arteriSecondary: val,
-                          kolektorSecondary: val,
-                        }));
-                      }}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
-                      <span className="text-xs font-medium text-slate-700">Jalan Lingkungan</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={activeLayers.lingkunganPrimary || activeLayers.lingkunganSecondary}
-                      onChange={() => {
-                        const val = !(activeLayers.lingkunganPrimary || activeLayers.lingkunganSecondary);
-                        setActiveLayers((prev) => ({
-                          ...prev,
-                          lingkunganPrimary: val,
-                          lingkunganSecondary: val,
-                        }));
-                      }}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100">
-                    <div className="flex items-center gap-2.5">
-                      <span className="w-3 h-3 rounded-full bg-slate-500 shrink-0" />
-                      <span className="text-xs font-medium text-slate-700">Jalan Lokal</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={activeLayers.lokalPrimary || activeLayers.lokalSecondary}
-                      onChange={() => {
-                        const val = !(activeLayers.lokalPrimary || activeLayers.lokalSecondary);
-                        setActiveLayers((prev) => ({
-                          ...prev,
-                          lokalPrimary: val,
-                          lokalSecondary: val,
-                        }));
-                      }}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                    />
-                  </label>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pilihan Ruas Jalan</p>
+                <div className="max-h-64 overflow-y-auto pr-1 space-y-1.5">
+                  {Object.entries(ROAD_LAYERS).map(([key, config]) => (
+                    <label
+                      key={key}
+                      className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors border border-transparent hover:border-slate-100"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: config.color }} />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium text-slate-700">{config.name}</span>
+                          <span className="text-[10px] text-slate-400">
+                            {layerCounts[key] || config.count}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {layerLoading[key] && (
+                          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        )}
+                        <input
+                          type="checkbox"
+                          checked={activeLayers[key]}
+                          onChange={() => {
+                            toggleLayer(key);
+                            fetchLayerCount(key);
+                          }}
+                          disabled={layerLoading[key]}
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer disabled:opacity-50"
+                        />
+                      </div>
+                    </label>
+                  ))}
                 </div>
               </div>
             </div>
@@ -367,6 +345,9 @@ function GISMapViewPage() {
             onResetFocus={resetFocusTrigger}
             onMarkerClick={(report) => setSelectedReportOnMap(report)}
             selectedReport={selectedReportOnMap}
+            onLocationFound={handleLocationFound}
+            onLocationError={handleLocationError}
+            onLayerLoadingChange={handleLayerLoadingChange}
           />
         </div>
 
@@ -440,7 +421,7 @@ function GISMapViewPage() {
   // Admin View (Tetap Tidak Terganggu)
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
-      <AdminSidebar activePath="/admin/gis" onLogout={() => navigate('/admin-login')} />
+      <AdminSidebar activePath="/admin/gis" />
       
       <div className="flex-1 ml-64 flex flex-col min-w-0 relative">
         <header className="bg-white border-b border-slate-200 h-16 px-8 flex items-center justify-between sticky top-0 z-10">

@@ -10,7 +10,6 @@ import TrackingPage from './pages/TrackingPage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import AdminLoginPage from './pages/AdminLoginPage';
 import DashboardAdminMaster from './pages/DashboardAdminMaster';
 import FacilityCategoriesPage from './pages/FacilityCategoriesPage';
 import FacilityDetailPage from './pages/FacilityDetailPage';
@@ -67,11 +66,6 @@ function App() {
         <Route path="/register" element={
           <PublicRoute>
             <RegisterPage />
-          </PublicRoute>
-        } />
-        <Route path="/admin-login" element={
-          <PublicRoute>
-            <AdminLoginPage />
           </PublicRoute>
         } />
         

@@ -13,7 +13,6 @@ import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
 import NotificationPopup from '../components/ui/NotificationPopup';
 import AdminSidebar from '../components/AdminSidebar';
-import LogoutConfirm from '../components/ui/LogoutConfirm';
 
 function ImageWithFallback({ src, alt, className = '' }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -62,17 +61,6 @@ function TriageReportsPage() {
   const [actionType, setActionType] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [logoutOpen, setLogoutOpen] = useState(false);
-
-  const handleLogout = () => setLogoutOpen(true);
-
-  const confirmLogout = () => {
-    logout();
-    navigate('/admin-login');
-    setLogoutOpen(false);
-  };
-
-  const cancelLogout = () => setLogoutOpen(false);
 
   const filteredReports = reports.filter(r => {
     const term = searchTerm.toLowerCase();
@@ -155,12 +143,7 @@ function TriageReportsPage() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex font-sans">
-      <AdminSidebar activePath="/admin/triage" onLogout={handleLogout} />
-      <LogoutConfirm 
-        isOpen={logoutOpen} 
-        onClose={() => setLogoutOpen(false)} 
-        onConfirm={confirmLogout} 
-      />
+      <AdminSidebar activePath="/admin/triage" />
 
       {/* Main Content */}
       <div className="flex-1 ml-64 flex flex-col min-w-0">
