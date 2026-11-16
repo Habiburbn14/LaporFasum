@@ -48,7 +48,7 @@ export function getKecamatanIdFromKode(kode) {
   return Number.isNaN(id) ? null : id;
 }
 
-async function loadKecamatanGeoJSON() {
+export async function loadKecamatanGeoJSON() {
   if (geojsonCache) return geojsonCache;
   const res = await fetch('/kecamatan_lamongan.geojson');
   if (!res.ok) throw new Error(`Gagal memuat batas kecamatan (HTTP ${res.status})`);

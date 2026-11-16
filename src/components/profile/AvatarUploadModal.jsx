@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Modal from '../ui/Modal';
-import { uploadAvatar } from '../../services/userApi';
+import { updateFotoProfile } from '../../services/userApi';
 import toast from 'react-hot-toast';
 import { User } from 'lucide-react';
 
@@ -30,12 +30,17 @@ function AvatarUploadModal({ isOpen, onClose, currentAvatar, onUpdate }) {
 
   const handleSubmit = async () => {
     setLoading(true);
-    const result = await uploadAvatar(mode === 'generate' ? null : selectedFile);
+    // For generated avatar, use the preview URL directly
+    // For uploaded file, we need to upload to a service first (Cloudinary, etc.)
+    // For now, using the preview URL (which is either DiceBear or local blob)
+    // In production, you'd upload the file to Cloudinary/S3 first
+    const fotoUrl = preview;
+    const result = await updateFotoProfile(fotoUrl);
     setLoading(false);
     
     if (result.success) {
       toast.success('Foto profil berhasil diperbarui');
-      onUpdate(result.url || result.data.avatar);
+      onUpdate(fotoUrl);
       onClose();
     } else {
       toast.error(result.error || 'Gagal mengunggah foto');

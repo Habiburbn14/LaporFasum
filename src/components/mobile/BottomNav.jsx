@@ -35,7 +35,7 @@ function BottomNav() {
       }
       toast.loading('Mendeteksi lokasi GPS...', { id: toastId });
 
-      // 2. Get GPS (wajib)
+      // 2. Get GPS (wajib) - with better options for accuracy
       const pos = await getCurrentLocation(true);
       if (!pos) {
         toast.dismiss(toastId);
@@ -44,22 +44,45 @@ function BottomNav() {
         return;
       }
 
-      // 3. Detect kecamatan
+      // 3. Validate accuracy - if > 50m, try again for better fix
+      let accuracy = pos.coords.accuracy;
+      let validPos = pos;
+      
+      if (accuracy > 50) {
+        toast.loading(`Akurasi GPS buruk (±${Math.round(accuracy)}m), coba lagi...`, { id: toastId, duration: 10000 });
+        try {
+          const retryPos = await getCurrentLocation(true);
+          if (retryPos && retryPos.coords.accuracy < accuracy) {
+            validPos = retryPos;
+            accuracy = retryPos.coords.accuracy;
+          }
+        } catch {}
+      }
+
+      // 4. Detect kecamatan by coordinates
       const kecamatan = await findKecamatanByCoords(
-        pos.coords.latitude,
-        pos.coords.longitude
+        validPos.coords.latitude,
+        validPos.coords.longitude
       );
 
-      // 4. Save to sessionStorage
+      // 5. Validate that we found a valid kecamatan in Lamongan
+      // If kecamatan is null or not in Lamongan, we have a problem
+      if (!kecamatan) {
+        console.warn('Kecamatan tidak ditemukan untuk koordinat:', validPos.coords.latitude, validPos.coords.longitude);
+        // Don't fail - still save but with "Lokasi Terdeteksi"
+      }
+
+      // 6. Save to sessionStorage
       sessionStorage.setItem('report_photoUrl', photo.webPath);
       sessionStorage.setItem('report_locationData', JSON.stringify({
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
+        latitude: validPos.coords.latitude,
+        longitude: validPos.coords.longitude,
         kecamatan,
-        region: kecamatan?.nama_kecamatan || 'Lokasi Terdeteksi'
+        region: kecamatan?.nama_kecamatan || 'Lokasi Terdeteksi',
+        accuracy: accuracy
       }));
 
-      toast.success('Foto & lokasi tersimpan', { id: toastId });
+      toast.success(`Lokasi: ${kecamatan?.nama_kecamatan || 'Terdeteksi'} (akurasi: ±${Math.round(accuracy)}m)`, { id: toastId });
       navigate('/report/form');
     } catch (e) {
       console.error('Camera/GPS error:', e);

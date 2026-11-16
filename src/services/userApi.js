@@ -15,10 +15,17 @@ const authHeaders = () => {
   };
 };
 
+const formHeaders = () => {
+  const token = getAccessToken();
+  return {
+    'Authorization': `Bearer ${token}`,
+  };
+};
+
 export const getUserProfile = async () => {
   try {
     const response = await axios.get(
-      `${BASE_URL}/auth/me`,
+      `${BASE_URL}/user/profile`,
       { headers: authHeaders() }
     );
 
@@ -34,7 +41,7 @@ export const getUserProfile = async () => {
         id_role: user.id_role,
         id_kecamatan: user.id_kecamatan,
         id_kabupaten: user.id_kabupaten,
-        avatar: user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
+        avatar: user.foto_profile || user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`,
         isVerified: true,
         lokasi: user.alamat_domisili || 'Kabupaten Lamongan',
         joinDate: '2026-01-15'
@@ -54,32 +61,12 @@ export const updateUserProfile = async (updates) => {
     if (updates.nama) formData.append('nama_lengkap', updates.nama);
     if (updates.lokasi) formData.append('alamat_domisili', updates.lokasi);
 
-    let res;
-    try {
-      res = await axios.put(
-        `${BASE_URL}/user/profile`,
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${getAccessToken()}`
-          }
-        }
-      );
-    } catch (err) {
-      // Fallback jika backend Railway menggunakan /me dengan JSON
-      res = await axios.put(
-        `${BASE_URL}/me`,
-        {
-          nama_lengkap: updates.nama,
-          email: updates.email,
-          alamat_domisili: updates.lokasi,
-          nik: updates.nik,
-        },
-        { headers: authHeaders() }
-      );
-    }
+    const response = await axios.put(
+      `${BASE_URL}/user/profile`,
+      formData,
+      { headers: formHeaders() }
+    );
 
-    // Refresh profil untuk data sinkron terbaru
     const refreshed = await getUserProfile();
     if (refreshed.success) {
       return {
@@ -113,28 +100,28 @@ export const updateUserProfile = async (updates) => {
   }
 };
 
-export const uploadAvatar = async (file) => {
+export const updateFotoProfile = async (fotoProfileUrl) => {
   try {
     const formData = new FormData();
-    formData.append('avatar', file);
-    
-    const response = await axios.post(
-      `${BASE_URL}/me/avatar`,
-      formData, 
-      { 
-        headers: {
-          'Authorization': `Bearer ${getAccessToken()}`,
-          'WWW-Authenticate': 'Bearer'
-        }
-      }
+    formData.append('foto_profile', fotoProfileUrl);
+
+    const response = await axios.put(
+      `${BASE_URL}/user/profile/foto`,
+      formData,
+      { headers: formHeaders() }
     );
 
-    return { success: true, url: response.data.avatar_url };
+    const refreshed = await getUserProfile();
+    if (refreshed.success) {
+      return { ...refreshed, success: true };
+    }
+
+    return { success: true, data: { avatar: fotoProfileUrl } };
   } catch (error) {
     if (error.response && error.response.status === 401) {
       throw new Error('unauthorized');
     }
-    return { success: false, error: error.response?.data?.detail || 'Gagal mengunggah foto' };
+    return { success: false, error: error.response?.data?.detail || 'Gagal memperbarui foto profil' };
   }
 };
 
@@ -144,26 +131,13 @@ export const changePassword = async (oldPassword, newPassword) => {
     formData.append('password_lama', oldPassword);
     formData.append('password_baru', newPassword);
 
-    let res;
-    try {
-      res = await axios.put(
-        `${BASE_URL}/user/profile`,
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${getAccessToken()}`
-          }
-        }
-      );
-    } catch {
-      res = await axios.post(
-        `${BASE_URL}/me/change-password`,
-        { old_password: oldPassword, new_password: newPassword },
-        { headers: authHeaders() }
-      );
-    }
+    const response = await axios.put(
+      `${BASE_URL}/user/profile/password`,
+      formData,
+      { headers: formHeaders() }
+    );
 
-    return { success: true, message: res.data?.message || 'Password berhasil diubah' };
+    return { success: true, message: response.data?.message || 'Password berhasil diubah' };
   } catch (error) {
     if (error.response && error.response.status === 401) {
       throw new Error('unauthorized');

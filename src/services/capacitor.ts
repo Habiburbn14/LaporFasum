@@ -105,10 +105,30 @@ export async function getCurrentLocation(highAccuracy = true): Promise<Position 
       }
     }
 
+    // For web, use browser's native geolocation with better options
+    if (!isNative) {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation not supported'));
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve(pos),
+          (err) => reject(err),
+          {
+            enableHighAccuracy: highAccuracy,
+            timeout: 25000,
+            maximumAge: 0, // Force fresh reading
+          }
+        );
+      });
+    }
+
     const pos = await Geolocation.getCurrentPosition({
       enableHighAccuracy: highAccuracy,
-      timeout: 15000,
-      maximumAge: 0,
+      timeout: 25000,
+      maximumAge: 0, // Force fresh reading
     });
     return pos;
   } catch (e) {

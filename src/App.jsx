@@ -134,6 +134,21 @@ function App() {
             <SettingsPage />
           </ProtectedRoute>
         } />
+        <Route path="/admin/settings/account" element={
+          <ProtectedRoute roles={[ADMIN_KECAMATAN, ADMIN_KABUPATEN]}>
+            <SettingsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/notifications" element={
+          <ProtectedRoute roles={[ADMIN_KECAMATAN, ADMIN_KABUPATEN]}>
+            <SettingsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/settings/about" element={
+          <ProtectedRoute roles={[ADMIN_KECAMATAN, ADMIN_KABUPATEN]}>
+            <SettingsPage />
+          </ProtectedRoute>
+        } />
       </Routes>
     </div>
   );

@@ -1,15 +1,27 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 
-function WeeklyChart({ data, width = 320, height = 120 }) {
+function WeeklyChart({ data, width = '100%', height = 200 }) {
+  const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(width === '100%' ? 600 : width);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const w = containerRef.current.clientWidth || 600;
+      setContainerWidth(w);
+    }
+  }, []);
+
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-24 flex items-center justify-center bg-slate-50 rounded-xl">
+      <div className="w-full h-40 flex items-center justify-center bg-slate-50 rounded-xl">
         <span className="text-xs text-slate-400">Tidak ada data</span>
       </div>
     );
   }
 
   const padding = 12;
+  const chartWidth = containerWidth;
+  const chartHeight = height;
   const values = data.map((d) => d.value);
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -17,13 +29,12 @@ function WeeklyChart({ data, width = 320, height = 120 }) {
 
   const points = data.map((d, i) => {
     const x = data.length === 1 
-      ? width / 2 
-      : padding + (i / (data.length - 1)) * (width - padding * 2);
-    const y = height - padding - ((d.value - min) / range) * (height - padding * 2);
+      ? chartWidth / 2 
+      : padding + (i / (data.length - 1)) * (chartWidth - padding * 2);
+    const y = chartHeight - padding - ((d.value - min) / range) * (chartHeight - padding * 2);
     return { x, y };
   });
 
-  // For single point, just show a dot - no line/area
   const isSinglePoint = data.length === 1;
   const linePath = isSinglePoint 
     ? `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`
@@ -33,11 +44,11 @@ function WeeklyChart({ data, width = 320, height = 120 }) {
 
   const areaPath = isSinglePoint 
     ? '' 
-    : `${linePath} L ${points[points.length - 1].x} ${height - padding} L ${points[0].x} ${height - padding} Z`;
+    : `${linePath} L ${points[points.length - 1].x} ${chartHeight - padding} L ${points[0].x} ${chartHeight - padding} Z`;
 
   return (
-    <div className="w-full">
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto" preserveAspectRatio="none">
+    <div ref={containerRef} className="w-full">
+      <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-auto" preserveAspectRatio="none">
         <defs>
           <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#2563eb" stopOpacity="0.25" />

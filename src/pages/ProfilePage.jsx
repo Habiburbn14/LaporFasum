@@ -12,7 +12,7 @@ import {
   BadgeCheck,
   MapPin,
   CheckCircle2,
-  FileStack
+  FileStack, Loader2
 } from 'lucide-react';
 import LogoutConfirm from '../components/ui/LogoutConfirm';
 import BottomNav from '../components/mobile/BottomNav';
@@ -27,7 +27,6 @@ import { getUserProfile } from '../services/userApi';
 import { useReportStore } from '../stores/useReportStore';
 import { useAuthStore } from '../stores/useAuthStore';
 import toast from 'react-hot-toast';
-import LoadingScreen from '../components/ui/LoadingScreen';
 import ErrorState from '../components/ui/ErrorState';
 
 function ProfilePage() {
@@ -93,7 +92,23 @@ function ProfilePage() {
     setShowPolicyModal(true);
   };
 
-  if (loading) return <LoadingScreen message="Memuat profil..." />;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 max-w-[430px] mx-auto pb-28 font-sans flex flex-col justify-between">
+        <header className="bg-gradient-to-br from-blue-600 via-blue-600 to-violet-600 px-5 pt-8 pb-16 rounded-b-3xl relative overflow-hidden shadow-sm">
+          <div className="relative">
+            <h1 className="text-xl font-bold text-white tracking-tight">Profil Saya</h1>
+            <p className="text-xs text-blue-100 mt-1">Kelola data dan pengaturan akun Anda</p>
+          </div>
+        </header>
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
+          <p className="text-slate-500 text-sm">Memuat profil...</p>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
 
   if (error) return <ErrorState message={error} onRetry={fetchProfile} />;
 

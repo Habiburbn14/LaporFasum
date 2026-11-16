@@ -131,6 +131,10 @@ function CustomMap({
   onLocationFound,
   onLocationError,
   onLayerLoadingChange,
+  kecamatanGeoJSON = null,
+  selectedKecamatan = null,
+  onKecamatanSelect,
+  userCoords = null,
 }) {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -139,7 +143,7 @@ function CustomMap({
   const markersRef = useRef([]);
   const userLocationMarkerRef = useRef(null);
   const lastFocusTriggerRef = useRef(null);
-  const [userCoords, setUserCoords] = useState(null);
+  const [internalUserCoords, setInternalUserCoords] = useState(null);
 
   // Pantau lokasi GPS pengguna secara live (Real-time GPS User Dot)
   useEffect(() => {
@@ -147,7 +151,7 @@ function CustomMap({
 
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
-        setUserCoords({
+        setInternalUserCoords({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
@@ -169,7 +173,8 @@ function CustomMap({
 
   // Render Marker Posisi Pengguna Saat Ini (Pulsing Blue Dot)
   useEffect(() => {
-    if (!mapInstanceRef.current || !userCoords) return;
+    const currentCoords = userCoords || internalUserCoords;
+    if (!mapInstanceRef.current || !currentCoords) return;
     const map = mapInstanceRef.current;
 
     if (userLocationMarkerRef.current && map.hasLayer(userLocationMarkerRef.current)) {
@@ -204,7 +209,8 @@ function CustomMap({
       iconAnchor: [11, 11],
     });
 
-    const marker = L.marker([userCoords.lat, userCoords.lng], {
+    const markerCoords = userCoords || internalUserCoords;
+    const marker = L.marker([markerCoords.lat, markerCoords.lng], {
       icon: userMarkerIcon,
       zIndexOffset: 1000,
     });
@@ -217,7 +223,7 @@ function CustomMap({
 
     marker.addTo(map);
     userLocationMarkerRef.current = marker;
-  }, [userCoords]);
+  }, [userCoords, internalUserCoords]);
 
   // Inisialisasi peta Leaflet
   useEffect(() => {
@@ -314,6 +320,69 @@ function CustomMap({
     };
   }, []);
 
+  // Load Kecamatan Boundaries (Arsir/Block Warna)
+  const kecamatanLayerRef = useRef(null);
+  useEffect(() => {
+    if (!mapInstanceRef.current || !kecamatanGeoJSON) return;
+    const map = mapInstanceRef.current;
+
+    if (kecamatanLayerRef.current && map.hasLayer(kecamatanLayerRef.current)) {
+      map.removeLayer(kecamatanLayerRef.current);
+    }
+
+    const kecamatanLayer = L.geoJSON(kecamatanGeoJSON, {
+      filter: (feature) => feature.geometry && feature.geometry.type !== 'Point',
+      style: (feature) => {
+        const isSelected = selectedKecamatan && feature.properties.nama_kecamatan === selectedKecamatan.nama_kecamatan;
+        return {
+          color: isSelected ? '#2563eb' : '#64748b',
+          weight: isSelected ? 3 : 1.5,
+          opacity: isSelected ? 1 : 0.8,
+          fillColor: isSelected ? '#2563eb' : '#94a3b8',
+          fillOpacity: isSelected ? 0.25 : 0.08,
+          lineCap: 'round',
+          lineJoin: 'round',
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        if (onKecamatanSelect) {
+          layer.on('click', () => {
+            onKecamatanSelect(feature.properties);
+          });
+          
+          // Highlight on hover
+          layer.on('mouseover', () => {
+            layer.setStyle({
+              weight: 3,
+              fillOpacity: 0.2,
+            });
+            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+              layer.bringToFront();
+            }
+          });
+          
+          layer.on('mouseout', () => {
+            const isSelected = selectedKecamatan && feature.properties.nama_kecamatan === selectedKecamatan.nama_kecamatan;
+            layer.setStyle({
+              weight: isSelected ? 3 : 1.5,
+              fillOpacity: isSelected ? 0.25 : 0.08,
+            });
+          });
+        }
+        
+        // Tooltip
+        layer.bindTooltip(feature.properties.nama_kecamatan, {
+          direction: 'center',
+          className: 'bg-slate-900 text-white text-xs px-2 py-1 rounded shadow font-sans',
+          sticky: true,
+        });
+      },
+    });
+
+    kecamatanLayer.addTo(map);
+    kecamatanLayerRef.current = kecamatanLayer;
+  }, [kecamatanGeoJSON, selectedKecamatan, onKecamatanSelect]);
+
   // Expose reset focus handler jika di-trigger oleh parent (Tombol Crosshair)
   useEffect(() => {
     if (!onResetFocus || !mapInstanceRef.current) return;
@@ -327,7 +396,7 @@ function CustomMap({
         (pos) => {
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
-          setUserCoords({ lat, lng });
+          setInternalUserCoords({ lat, lng });
           if (mapInstanceRef.current) {
             mapInstanceRef.current.setView([lat, lng], 16, { animate: true });
           }
@@ -337,10 +406,11 @@ function CustomMap({
         },
         (err) => {
           console.warn('Gagal mendapatkan lokasi akurat:', err.message);
-          if (userCoords?.lat && userCoords?.lng && mapInstanceRef.current) {
-            mapInstanceRef.current.setView([userCoords.lat, userCoords.lng], 16, { animate: true });
+          const fallbackCoords = userCoords || internalUserCoords;
+          if (fallbackCoords?.lat && fallbackCoords?.lng && mapInstanceRef.current) {
+            mapInstanceRef.current.setView([fallbackCoords.lat, fallbackCoords.lng], 16, { animate: true });
             if (onLocationFound) {
-              onLocationFound(userCoords);
+              onLocationFound(fallbackCoords);
             }
           } else {
             if (onLocationError) {
@@ -356,8 +426,9 @@ function CustomMap({
         },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
       );
-    } else if (userCoords?.lat && userCoords?.lng) {
-      mapInstanceRef.current.setView([userCoords.lat, userCoords.lng], 16, { animate: true });
+    } else if ((userCoords || internalUserCoords)?.lat && (userCoords || internalUserCoords)?.lng) {
+      const fallbackCoords = userCoords || internalUserCoords;
+      mapInstanceRef.current.setView([fallbackCoords.lat, fallbackCoords.lng], 16, { animate: true });
     }
   }, [onResetFocus]);
 

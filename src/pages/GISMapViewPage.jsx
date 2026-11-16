@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  Layers, X, ChevronDown, Crosshair, Route, Globe, User, AlertCircle, MapPin, Eye, Loader2
+  Layers, X, ChevronDown, Crosshair, Route, Globe, User, AlertCircle, MapPin, Eye, Loader2, 
+  Navigation, Home, Download, RefreshCw
 } from 'lucide-react';
 import { MapContainer, TileLayer, ZoomControl, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -9,12 +10,13 @@ import toast from 'react-hot-toast';
 import BottomNav from '../components/mobile/BottomNav';
 import CustomMap, { ROAD_LAYERS } from '../components/CustomMap';
 import { useReportStore } from '../stores/useReportStore';
-import LoadingScreen from '../components/ui/LoadingScreen';
+import { useAuthStore } from '../stores/useAuthStore';
 import ErrorState from '../components/ui/ErrorState';
 import { getErrorMessage } from '../utils/error';
 import AdminSidebar from '../components/AdminSidebar';
 import NotificationPopup from '../components/ui/NotificationPopup';
 import { getRoadNetwork } from '../services/userApi';
+import { findKecamatanByCoords } from '../utils/kecamatan';
 
 const STATUS_STYLES = {
   'Menunggu Verifikasi': 'bg-amber-100 text-amber-700 border-amber-200/60',
@@ -28,6 +30,7 @@ function GISMapViewPage() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isAdmin = pathname.startsWith('/admin');
+  const { user } = useAuthStore();
 
   // Admin state
   const [viewMode, setViewMode] = useState('default');
@@ -37,13 +40,15 @@ function GISMapViewPage() {
   const [adminError, setAdminError] = useState(null);
 
   // Citizen map states
-  const [reportFilter, setReportFilter] = useState('all'); // 'all' | 'mine'
   const [showLayerMenu, setShowLayerMenu] = useState(false);
   const [baseMap, setBaseMap] = useState('openstreetmap');
   const [resetFocusTrigger, setResetFocusTrigger] = useState(0);
   const [selectedReportOnMap, setSelectedReportOnMap] = useState(null);
   const [layerLoading, setLayerLoading] = useState({});
   const [layerCounts, setLayerCounts] = useState({});
+  
+  // Admin GIS: show/hide all reports toggle
+  const [showAllReports, setShowAllReports] = useState(false);
   
   // Initialize activeLayers from ROAD_LAYERS keys
   const initialActiveLayers = useMemo(() => {
@@ -54,7 +59,7 @@ function GISMapViewPage() {
   
   const [activeLayers, setActiveLayers] = useState(initialActiveLayers);
 
-  const { reports, mapReports, fetchReports, fetchAllReports, fetchMapPoints } = useReportStore();
+  const { reports, mapReports, fetchReports, fetchMapPoints } = useReportStore();
 
   // Map center for Lamongan (Admin)
   const center = [-7.169249504786527, 112.33849173392773];
@@ -65,7 +70,8 @@ function GISMapViewPage() {
     color: '#2563eb',
     weight: 3,
     opacity: 1,
-    fillOpacity: 0,
+    fillColor: '#2563eb',
+    fillOpacity: 0.02,
     lineCap: 'round',
     lineJoin: 'round',
   };
@@ -95,17 +101,14 @@ function GISMapViewPage() {
     fetchLamonganBoundary();
   }, [isAdmin]);
 
-  // Load laporan warga untuk titik lokasi di peta
+  // Load reports
   useEffect(() => {
-    if (isAdmin) return;
-
-    fetchMapPoints();
-    if (reportFilter === 'mine') {
-      fetchReports();
+    if (isAdmin) {
+      fetchMapPoints();
     } else {
-      fetchAllReports();
+      fetchReports();
     }
-  }, [isAdmin, reportFilter, fetchMapPoints, fetchReports, fetchAllReports]);
+  }, [isAdmin, fetchMapPoints, fetchReports]);
 
   const toggleLayer = (layerKey) => {
     setActiveLayers((prev) => ({
@@ -155,12 +158,66 @@ function GISMapViewPage() {
     toast.error(errorMsg);
   }, []);
 
+  // Improved GPS handler with better accuracy and auto-detect kecamatan
+  const handleGpsLocate = useCallback(async () => {
+    if (!navigator.geolocation) {
+      toast.error('GPS tidak didukung browser ini');
+      return;
+    }
+    
+    toast.loading('Mencari lokasi akurat...', { id: 'gps-locating', duration: 20000 });
+    
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const accuracy = pos.coords.accuracy;
+        
+        // Auto-detect kecamatan from coordinates
+        try {
+          const kecamatan = await findKecamatanByCoords(lat, lng);
+          if (kecamatan) {
+            toast.success(`Lokasi ditemukan di Kec. ${kecamatan.nama_kecamatan} (akurasi: ±${Math.round(accuracy)}m)`, { id: 'gps-locating' });
+          } else {
+            toast.success(`Lokasi ditemukan (akurasi: ±${Math.round(accuracy)}m)`, { id: 'gps-locating' });
+          }
+        } catch {
+          toast.success(`Lokasi ditemukan (akurasi: ±${Math.round(accuracy)}m)`, { id: 'gps-locating' });
+        }
+        
+        setResetFocusTrigger(Date.now());
+      },
+      (err) => {
+        handleLocationError(err);
+      },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 } // maximumAge: 0 forces fresh GPS reading
+    );
+  }, [handleLocationError]);
+
   const getStatusStyle = (status) => {
     return STATUS_STYLES[status] || 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
   if (isAdmin && adminLoading) {
-    return <LoadingScreen message="Memuat batas wilayah Lamongan..." />;
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex font-sans selection:bg-blue-100 selection:text-blue-900">
+        <AdminSidebar activePath={pathname} />
+        <div className="flex-1 ml-64 flex flex-col min-w-0">
+          <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 h-16 px-8 flex items-center justify-between sticky top-0 z-20">
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">Peta</h1>
+              <p className="text-xs text-slate-500">Peta dan lokasi laporan infrastruktur</p>
+            </div>
+          </header>
+          <main className="flex-1 p-8 flex items-center justify-center">
+            <div className="flex flex-col items-center justify-center text-slate-400 gap-2">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <span className="text-sm">Memuat peta...</span>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
   }
 
   if (isAdmin && adminError) {
@@ -169,66 +226,37 @@ function GISMapViewPage() {
 
   // Citizen Mobile Map View
   if (!isAdmin) {
-    // Filter laporan yang valid memiliki titik koordinat
-    const displayedReports = reportFilter === 'mine'
-      ? reports.filter((r) => r.lat && r.lng)
-      : (mapReports.length > 0 ? mapReports : reports.filter((r) => r.lat && r.lng));
+    // Filter laporan yang valid memiliki titik koordinat - hanya laporan sendiri
+    const displayedReports = reports.filter((r) => r.lat && r.lng);
 
     const totalCount = displayedReports.length;
 
     return (
       <div className="h-screen w-full bg-slate-100 max-w-[430px] mx-auto flex flex-col relative overflow-hidden pb-16 font-sans">
-        {/* Floating Top Header: Filter Modern + Tombol Aksi Persis Sesuai SS User */}
+        {/* Floating Top Header: Label Laporan Saya + GPS Button */}
         <div className="absolute top-4 left-3 right-3 z-[999] flex flex-col gap-2 pointer-events-none">
           <div className="flex items-center justify-between gap-2 pointer-events-auto">
-            {/* Pemfilteran Semua Laporan vs Laporan Saya - Modern Glassmorphism */}
+            {/* Label Laporan Saya - Modern Glassmorphism */}
             <div className="flex-1 flex bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200/80">
-              <button
-                onClick={() => {
-                  setReportFilter('all');
-                  fetchAllReports();
-                }}
-                className={`flex-1 py-1.5 px-2.5 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                  reportFilter === 'all'
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Globe className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Semua</span>
-              </button>
-              <button
-                onClick={() => {
-                  setReportFilter('mine');
-                  fetchReports();
-                }}
-                className={`flex-1 py-1.5 px-2.5 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
-                  reportFilter === 'mine'
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/25'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <User className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Laporan Saya</span>
-                {reportFilter === 'mine' && totalCount > 0 && (
-                  <span className="text-[10px] bg-white/20 px-1.5 py-0.2 rounded-full font-bold">
-                    {totalCount}
-                  </span>
-                )}
-              </button>
+              <div className="flex-1 flex items-center gap-2 px-3 py-1.5">
+                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                  <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-900">Laporan Saya</span>
+                  <span className="text-[10px] text-slate-400">{totalCount} laporan</span>
+                </div>
+              </div>
             </div>
 
-            {/* Quick Actions (Focus & Layer Settings) - Tetap persis seperti SS user */}
+            {/* Quick Actions (Focus & Layer Settings) */}
             <div className="flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200/80 shrink-0">
               <button
-                onClick={() => {
-                  toast.loading('Mencari lokasi Anda...', { id: 'gps-locating', duration: 1500 });
-                  setResetFocusTrigger(Date.now());
-                }}
+                onClick={handleGpsLocate}
                 className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-600 hover:text-blue-600 hover:bg-slate-100 active:scale-95 transition-all"
-                title="Pusatkan Peta ke Lokasi Saat Ini"
+                title="Deteksi Lokasi Saya (GPS)"
               >
-                <Crosshair className="w-4 h-4" />
+                <Navigation className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setShowLayerMenu(!showLayerMenu)}
@@ -418,139 +446,68 @@ function GISMapViewPage() {
     );
   }
 
-  // Admin View (Tetap Tidak Terganggu)
+  // Admin View (Modern Clean GovTech GIS)
   return (
-    <div className="min-h-screen bg-slate-100 flex font-sans">
+    <div className="h-screen bg-[#F8FAFC] flex font-sans selection:bg-blue-100 selection:text-blue-900 overflow-hidden">
       <AdminSidebar activePath="/admin/gis" />
       
-      <div className="flex-1 ml-64 flex flex-col min-w-0 relative">
-        <header className="bg-white border-b border-slate-200 h-16 px-8 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-xl font-bold text-slate-900">GIS Map View</h1>
-              <p className="text-xs text-slate-500">Visualisasi sebaran ruas jalan</p>
-            </div>
+      <div className="flex-1 ml-64 flex flex-col min-w-0 h-screen relative">
+        <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 h-16 px-8 flex items-center justify-between sticky top-0 z-20 shrink-0">
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">GIS Map View</h1>
+            <p className="text-xs text-slate-500">Visualisasi sebaran ruas jalan & laporan infrastruktur</p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <NotificationPopup />
-            <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-              <img
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"
-                alt="Admin"
-                className="w-9 h-9 rounded-full object-cover"
-              />
+
+            <div className="flex items-center gap-2 bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200/80">
+              <button
+                onClick={() => setShowAllReports(!showAllReports)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl transition-all ${
+                  showAllReports
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+                title={showAllReports ? 'Tampilkan hanya laporan saya' : 'Tampilkan semua laporan warga'}
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>{showAllReports ? 'Semua Laporan' : 'Laporan Saya'}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+                {(user?.nama_lengkap || user?.nama || 'A').charAt(0).toUpperCase()}
+              </div>
               <div className="hidden md:block">
-                <p className="text-sm font-semibold text-slate-800 leading-tight">Admin Kabupaten</p>
-                <p className="text-[11px] text-slate-500">Dinas PUPR Lamongan</p>
+                <p className="text-xs font-semibold text-slate-900 leading-tight">
+                  {user?.nama_lengkap && user.nama_lengkap !== 'Admin' && user.nama_lengkap !== 'Admin Kabupaten'
+                    ? user.nama_lengkap
+                    : (user?.nama && user.nama !== 'Admin' && user.nama !== 'Admin Kabupaten' ? user.nama : 'Admin Kabupaten Lamongan')}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <p className="text-[10px] text-slate-500">Dinas PUPR Lamongan</p>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 relative">
-          <MapContainer 
-            center={center} 
-            zoom={zoom} 
-            style={{ height: '100%', width: '100%' }}
-            zoomControl={false}
-            attributionControl={false}
-          >
-            {viewMode === 'satellite' ? (
-              <TileLayer
-                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                attribution=""
-              />
-            ) : (
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution=""
-              />
-            )}
-            
-            {lamonganData && (
-              <GeoJSON
-                data={lamonganData}
-                filter={(feature) => feature.geometry?.type !== 'Point'}
-                style={boundaryStyle}
-              />
-            )}
-            
-            <ZoomControl position="topleft" />
-          </MapContainer>
-
-          <button
-            onClick={() => setShowLayerControl(!showLayerControl)}
-            className="absolute top-6 right-6 z-[1000] bg-white rounded-xl shadow-lg px-4 py-2.5 flex items-center gap-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
-          >
-            <Layers className="w-4 h-4" />
-            Layer Dasar
-            <ChevronDown className={`w-4 h-4 transition-transform ${showLayerControl ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showLayerControl && (
-            <div className="absolute top-20 right-6 z-[1000] bg-white rounded-2xl shadow-2xl border border-slate-200 w-80 max-h-[calc(100vh-140px)] overflow-y-auto">
-              <div className="p-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                <h3 className="font-bold text-slate-900 text-sm">Layer Dasar</h3>
-                <button
-                  onClick={() => setShowLayerControl(false)}
-                  className="w-6 h-6 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="p-4 space-y-4">
-                <div>
-                  <p className="text-xs font-bold text-slate-600 mb-2">Peta Dasar</p>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="basemap"
-                        checked={viewMode === 'default'}
-                        onChange={() => setViewMode('default')}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm text-slate-700">Open Street Map</span>
-                    </label>
-                    <label className="flex items-center gap-2 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
-                      <input
-                        type="radio"
-                        name="basemap"
-                        checked={viewMode === 'satellite'}
-                        onChange={() => setViewMode('satellite')}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-sm text-slate-700">World Imagery</span>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 pt-4">
-                  <p className="text-xs font-bold text-slate-600 mb-3">Batas Wilayah</p>
-                  <div className="space-y-1.5">
-                    <label className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={true}
-                        onChange={() => {}}
-                        disabled
-                        className="w-4 h-4 text-blue-600 rounded"
-                      />
-                      <span 
-                        className="w-3 h-3 rounded-sm flex-shrink-0" 
-                        style={{ backgroundColor: boundaryStyle.color }}
-                      />
-                      <span className="text-xs text-slate-700 flex-1">
-                        Batas Kabupaten Lamongan
-                      </span>
-                    </label>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+        <main className="flex-1 relative w-full h-[calc(100vh-4rem)]">
+          {/* Filter reports based on toggle */}
+          <CustomMap
+            reports={showAllReports ? mapReports.filter(r => r.lat && r.lng) : reports.filter(r => r.lat && r.lng)}
+            activeLayers={activeLayers}
+            baseMap={viewMode === 'satellite' ? 'satellite' : 'openstreetmap'}
+            onResetFocus={resetFocusTrigger}
+            onMarkerClick={(report) => setSelectedReportOnMap(report)}
+            selectedReport={selectedReportOnMap}
+            onLocationFound={handleLocationFound}
+            onLocationError={handleLocationError}
+            onLayerLoadingChange={handleLayerLoadingChange}
+          />
         </main>
       </div>
     </div>

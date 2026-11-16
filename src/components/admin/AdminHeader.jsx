@@ -20,15 +20,16 @@ function AdminHeader() {
           <Bell className="w-4 h-4" />
           <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
         </button>
-        <div className="flex items-center gap-3 pl-4 border-l border-slate-200">
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150"
-            alt="Admin"
-            className="w-9 h-9 rounded-full object-cover"
-          />
+        <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+            A
+          </div>
           <div className="hidden md:block">
-            <p className="text-sm font-semibold text-slate-800 leading-tight">Admin Kabupaten</p>
-            <p className="text-[11px] text-slate-500">Dinas PUPR Lamongan</p>
+            <p className="text-xs font-semibold text-slate-900 leading-tight">Admin Kabupaten Lamongan</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <p className="text-[10px] text-slate-500">Dinas PUPR Lamongan</p>
+            </div>
           </div>
         </div>
       </div>
