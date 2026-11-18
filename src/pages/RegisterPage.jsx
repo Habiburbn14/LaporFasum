@@ -22,6 +22,38 @@ import {
 import { registerUser } from '../services/authApi';
 import { KECAMATAN_LIST } from '../utils/kecamatan';
 import toast from 'react-hot-toast';
+import Logoapk from '../assets/Logoapk.svg';
+
+// Mapping NIK codes to kecamatan IDs (7-10 digit of NIK)
+const NIK_KECAMATAN_MAP = {
+  '352401': 1,  // Sukorame
+  '352402': 2,  // Bluluk
+  '352403': 3,  // Modo
+  '352404': 4,  // Ngimbang
+  '352405': 5,  // Babat
+  '352406': 6,  // Kedungpring
+  '352407': 7,  // Brondong
+  '352408': 8,  // Laren
+  '352409': 9,  // Sekaran
+  '352410': 10, // Maduran
+  '352411': 11, // Sambeng
+  '352412': 12, // Sugio
+  '352413': 13, // Pucuk
+  '352414': 14, // Paciran
+  '352415': 15, // Solokuro
+  '352416': 16, // Mantup
+  '352417': 17, // Sukodadi
+  '352418': 18, // Karanggeneng
+  '352419': 19, // Kembangbahu
+  '352420': 20, // Kalitengah
+  '352421': 21, // Turi
+  '352422': 22, // Lamongan
+  '352423': 23, // Tikung
+  '352424': 24, // Karangbinangun
+  '352425': 25, // Deket
+  '352426': 26, // Glagah
+  '352427': 27, // Sarirejo
+};
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -70,12 +102,34 @@ function RegisterPage() {
     if (name === 'nik') {
       // Hanya izinkan angka untuk NIK
       const numbersOnly = value.replace(/\D/g, '').slice(0, 16);
-      setFormData(prev => ({ ...prev, nik: numbersOnly }));
+      
+      // Auto-detect kecamatan berdasarkan 6 digit pertama NIK (e.g. 352401)
+      let autoKecamatanId = null;
+      if (numbersOnly.length >= 6 && numbersOnly.startsWith('3524')) {
+        const kecCode = numbersOnly.slice(0, 6);
+        if (NIK_KECAMATAN_MAP[kecCode]) {
+          autoKecamatanId = String(NIK_KECAMATAN_MAP[kecCode]);
+        }
+      }
+
+      setFormData(prev => ({
+        ...prev,
+        nik: numbersOnly,
+        // Auto input kecamatan jika terdeteksi dari NIK, tapi tetap bisa diubah user
+        ...(autoKecamatanId ? { id_kecamatan: autoKecamatanId } : {})
+      }));
+
+      // Validasi real-time NIK harus diawali 3524
+      if (numbersOnly.length >= 4 && !numbersOnly.startsWith('3524')) {
+        setErrors(prev => ({ ...prev, nik: 'NIK harus diawali kode 3524 (Kabupaten Lamongan)' }));
+      } else {
+        setErrors(prev => ({ ...prev, nik: '' }));
+      }
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
 
-    if (errors[name]) {
+    if (errors[name] && name !== 'nik') {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
@@ -90,6 +144,8 @@ function RegisterPage() {
 
     if (!formData.nik || formData.nik.length !== 16) {
       newErrors.nik = 'NIK harus tepat 16 digit angka';
+    } else if (!formData.nik.startsWith('3524')) {
+      newErrors.nik = 'NIK harus diawali kode 3524 (Kabupaten Lamongan)';
     }
 
     if (!formData.id_kecamatan) {
@@ -176,9 +232,7 @@ function RegisterPage() {
         {/* Header Logo */}
         <div className="flex items-center justify-center mt-4 mb-6">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white text-lg shadow-md shadow-blue-500/20">
-              L
-            </div>
+            <img src={Logoapk} alt="LaporFasum" className="w-10 h-10 shadow-md shadow-blue-500/20" />
             <div>
               <span className="font-extrabold text-slate-900 text-lg tracking-tight">LaporFasum</span>
               <p className="text-[10px] text-blue-600 font-semibold tracking-wider uppercase">Pemerintah Kab. Lamongan</p>
@@ -189,11 +243,6 @@ function RegisterPage() {
         {/* Title */}
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Daftar Akun Baru</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            {phase === 1 
-              ? 'Langkah 1: Masukkan data identitas kependudukan Anda'
-              : 'Langkah 2: Lengkapi email dan kata sandi keamanan akun'}
-          </p>
         </div>
 
         {/* Step Indicator Progress Bar */}
@@ -226,7 +275,7 @@ function RegisterPage() {
                 type="text"
                 name="nama"
                 required
-                placeholder="Contoh: Budi Santoso"
+                placeholder="Nama lengkap Anda"
                 className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                 value={formData.nama}
                 onChange={handleChange}
@@ -243,7 +292,7 @@ function RegisterPage() {
               <div className="flex items-center justify-between mb-1.5">
                 <label className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase tracking-wider">
                   <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                  Nomor Induk Kependudukan (NIK)
+                  NIK
                 </label>
                 <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-md ${
                   formData.nik.length === 16 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'
@@ -257,7 +306,7 @@ function RegisterPage() {
                 required
                 maxLength={16}
                 inputMode="numeric"
-                placeholder="Masukkan 16 digit NIK e-KTP"
+                placeholder="Masukkan 16 digit NIK"
                 className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-mono font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition tracking-wider"
                 value={formData.nik}
                 onChange={handleChange}
@@ -269,7 +318,7 @@ function RegisterPage() {
                 </p>
               ) : (
                 <p className="text-[11px] text-slate-400 mt-1">
-                  NIK digunakan untuk validasi resmi aduan fasilitas di Lamongan
+                  Untuk validasi aduan fasilitas di Lamongan
                 </p>
               )}
             </div>
@@ -371,7 +420,7 @@ function RegisterPage() {
               type="submit"
               className="w-full mt-3 py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-bold rounded-2xl shadow-lg shadow-blue-500/25 transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>Lanjutkan ke Keamanan Akun</span>
+              <span>Berikutnya</span>
               <ArrowRight className="w-4.5 h-4.5" />
             </button>
           </form>
@@ -386,16 +435,9 @@ function RegisterPage() {
                 <p className="text-[10px] uppercase font-bold text-blue-600 tracking-wider">Pendaftar</p>
                 <p className="text-sm font-bold text-slate-900 truncate">{formData.nama}</p>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  NIK: <span className="font-mono">{formData.nik}</span> • {selectedKecamatanObj ? `Kec. ${selectedKecamatanObj.nama_kecamatan}` : ''}
+                  <span className="font-mono">{formData.nik}</span> • {selectedKecamatanObj ? `Kec. ${selectedKecamatanObj.nama_kecamatan}` : ''}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={handlePrevPhase}
-                className="text-xs text-blue-600 hover:text-blue-800 font-bold underline px-2 py-1"
-              >
-                Ubah
-              </button>
             </div>
 
             <div>
@@ -545,13 +587,6 @@ function RegisterPage() {
             </Link>
           </p>
         </div>
-      </div>
-
-      {/* Footer Info */}
-      <div className="text-center mt-6">
-        <p className="text-[11px] text-slate-400">
-          Pemerintah Kabupaten Lamongan &copy; 2026
-        </p>
       </div>
     </div>
   );

@@ -100,10 +100,10 @@ export const updateUserProfile = async (updates) => {
   }
 };
 
-export const updateFotoProfile = async (fotoProfileUrl) => {
+export const updateFotoProfile = async (file) => {
   try {
     const formData = new FormData();
-    formData.append('foto_profile', fotoProfileUrl);
+    formData.append('foto_profile', file);
 
     const response = await axios.put(
       `${BASE_URL}/user/profile/foto`,
@@ -116,7 +116,7 @@ export const updateFotoProfile = async (fotoProfileUrl) => {
       return { ...refreshed, success: true };
     }
 
-    return { success: true, data: { avatar: fotoProfileUrl } };
+    return { success: true };
   } catch (error) {
     if (error.response && error.response.status === 401) {
       throw new Error('unauthorized');

@@ -1,6 +1,18 @@
 import axios from 'axios';
 import { persistedAuthStorage } from '../lib/storage';
+import { useAuthStore } from '../stores/useAuthStore';
 const BASE_URL = import.meta.env.VITE_BASE_URL;
+
+const jsonHeaders = () => ({
+  'Content-Type': 'application/json'
+});
+
+const formHeaders = () => {
+  const token = useAuthStore.getState().token;
+  return {
+    'Authorization': `Bearer ${token}`,
+  };
+};
 
 // *LOGIN
 export const loginUser = async (identifier, password) => {
@@ -8,11 +20,7 @@ export const loginUser = async (identifier, password) => {
     const response = await axios.post(
       `${BASE_URL}/auth/login`,
       { identifier, password },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+      { headers: jsonHeaders() }
     );
 
     if (response.data.access_token) {
@@ -55,11 +63,7 @@ export const registerUser = async (nama, nik, email, password, alamat_domisili, 
     const response = await axios.post(
       `${BASE_URL}/auth/register/user`,
       payload,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+      { headers: jsonHeaders() }
     );
 
     if (response.data.access_token) {
@@ -81,17 +85,17 @@ export const registerUser = async (nama, nik, email, password, alamat_domisili, 
   }
 };
 
-// *VERIFIKASI AKUN LUPA SANDI (NIK + Email)
+// *VERIFIKASI AKUN LUPA SANDI (NIK + Email) - FormData
 export const verifyResetAccount = async (nik, email) => {
   try {
+    const formData = new FormData();
+    formData.append('nik', nik);
+    formData.append('email', email);
+
     const response = await axios.post(
       `${BASE_URL}/auth/verify-reset`,
-      { nik, email },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+      formData,
+      { headers: formHeaders() }
     );
     return { success: true, data: response.data };
   } catch (error) {
@@ -106,17 +110,18 @@ export const verifyResetAccount = async (nik, email) => {
   }
 };
 
-// *RESET KATA SANDI BARU
+// *RESET KATA SANDI BARU - FormData
 export const resetPassword = async (nik, email, newPassword) => {
   try {
+    const formData = new FormData();
+    formData.append('nik', nik);
+    formData.append('email', email);
+    formData.append('new_password', newPassword);
+
     const response = await axios.post(
       `${BASE_URL}/auth/reset-password`,
-      { nik, email, new_password: newPassword },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
+      formData,
+      { headers: formHeaders() }
     );
     return { 
       success: true, 

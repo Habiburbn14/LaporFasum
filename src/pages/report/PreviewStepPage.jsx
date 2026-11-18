@@ -5,10 +5,13 @@ import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../utils/error';
 import { uriToFile } from '../../services/capacitor';
 import { uploadLaporan } from '../../services/upload.js';
+import { useReportStore } from '../../stores/useReportStore';
+import { formatDateFull } from '../../utils/date';
 
 export default function PreviewStepPage() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const refreshReports = useReportStore((state) => state.refreshAfterSubmit);
 
   const photoUrl = sessionStorage.getItem('report_photoUrl');
   const locationDataStr = sessionStorage.getItem('report_locationData');
@@ -19,29 +22,11 @@ export default function PreviewStepPage() {
   const formData = formDataStr ? JSON.parse(formDataStr) : null;
   const submitTime = submitTimeStr ? new Date(submitTimeStr) : new Date();
 
-  // Use locationData directly; no fallback coordinates.
+// Use locationData directly; no fallback coordinates.
   const gpsCoords = useMemo(() => ({
     lat: locationData?.latitude,
     lng: locationData?.longitude,
   }), [locationData]);
-
-  useEffect(() => {
-    if (!photoUrl || !locationData || !formData) {
-      navigate('/');
-    }
-  }, [photoUrl, locationData, formData, navigate]);
-
-  const formatDate = useCallback((date) => {
-    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-    const dayName = days[date.getDay()];
-    const day = date.getDate();
-    const month = months[date.getMonth()];
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${dayName}, ${day} ${month} ${year} - ${hours}:${minutes}`;
-  }, []);
 
   const handleFinalSubmit = useCallback(async () => {
     if (isSubmitting) return;
@@ -80,6 +65,10 @@ export default function PreviewStepPage() {
 
       sessionStorage.setItem('report_ticketId', id);
       toast.success('Laporan berhasil dikirim!', { id: toastId });
+      
+      // Refresh reports after successful submission
+      refreshReports();
+      
       navigate('/report/success');
     } catch (err) {
       const errorMsg = getErrorMessage(err);
@@ -131,7 +120,7 @@ export default function PreviewStepPage() {
                 <label className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
                   <Clock className="w-3 h-3" /> Waktu
                 </label>
-                <p className="text-xs text-slate-600 mt-1">{formatDate(submitTime)}</p>
+                <p className="text-xs text-slate-600 mt-1">{formatDateFull(submitTime)}</p>
               </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">

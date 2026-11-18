@@ -30,15 +30,45 @@ function AvatarUploadModal({ isOpen, onClose, currentAvatar, onUpdate }) {
 
   const handleSubmit = async () => {
     setLoading(true);
-    // For generated avatar, use the preview URL directly
-    // For uploaded file, we need to upload to a service first (Cloudinary, etc.)
-    // For now, using the preview URL (which is either DiceBear or local blob)
-    // In production, you'd upload the file to Cloudinary/S3 first
-    const fotoUrl = preview;
-    const result = await updateFotoProfile(fotoUrl);
+    
+    // Handle generate mode (DiceBear URL) - send as JSON or upload the URL
+    if (mode === 'generate' && preview) {
+      // For generated avatar, we need to send the URL. 
+      // Since backend expects file, we'll fetch the image and convert to blob
+      try {
+        const response = await fetch(preview);
+        const blob = await response.blob();
+        const file = new File([blob], 'avatar.png', { type: 'image/png' });
+        const result = await updateFotoProfile(file);
+        setLoading(false);
+        
+        if (result.success) {
+          toast.success('Foto profil berhasil diperbarui');
+          onUpdate(preview);
+          onClose();
+        } else {
+          toast.error(result.error || 'Gagal mengunggah foto');
+        }
+      } catch (e) {
+        setLoading(false);
+        toast.error('Gagal memproses avatar');
+      }
+      return;
+    }
+    
+    // Upload mode - must have a file selected
+    if (!selectedFile) {
+      toast.error('Pilih foto terlebih dahulu');
+      setLoading(false);
+      return;
+    }
+    
+    const result = await updateFotoProfile(selectedFile);
     setLoading(false);
     
     if (result.success) {
+      // Create object URL for immediate preview update
+      const fotoUrl = URL.createObjectURL(selectedFile);
       toast.success('Foto profil berhasil diperbarui');
       onUpdate(fotoUrl);
       onClose();

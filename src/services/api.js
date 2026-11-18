@@ -119,6 +119,8 @@ export const masterAPI = {
       'Expires': '0',
     }
   }),
+  getFasilitasUmum: (params = {}) => api.get('/master/fasilitas-umum', { params }),
+  getFasilitasUmumByKategori: (idKategori, params = {}) => api.get(`/master/fasilitas-umum/${idKategori}`, { params }),
 };
 
 export const gisAPI = {

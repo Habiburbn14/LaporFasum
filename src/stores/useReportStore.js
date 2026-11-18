@@ -12,6 +12,52 @@ export const useReportStore = create(
       lastFetched: null,
       cacheExpiry: 5 * 60 * 1000,
 
+      // Internal method to refresh reports (bypasses cache)
+      _refreshReports: async () => {
+        set({ loading: true, error: null });
+        const now = Date.now();
+
+        try {
+          const result = await getMyReports();
+
+          if (result.success) {
+            const data = result.data?.data || result.data || [];
+            const mappedReports = data.map((r, idx) => ({
+              id: r.id_laporan || idx,
+              ticket_code: r.id_laporan || '',
+              judul: r.judul_laporan || 'Tanpa Judul',
+              deskripsi: r.deskripsi_laporan || '',
+              status: r.status_terkini || 'Menunggu Verifikasi',
+              foto: r.foto_bukti || '',
+              kategori: r.nama_kategori || 'Lainnya',
+              kecamatan: r.nama_kecamatan || '-',
+              tanggal: r.created_at || '',
+              created_at: r.created_at || '',
+              tanggapan: r.tanggapan || null,
+              tanggal_tanggapan: r.tanggal_tanggapan || null,
+              lat: r.lat ?? r.latitude,
+              lng: r.lng ?? r.longitude,
+            }));
+
+            set({
+              reports: mappedReports,
+              loading: false,
+              lastFetched: now,
+            });
+          } else {
+            set({
+              error: result.error || 'Gagal memuat laporan',
+              loading: false,
+            });
+          }
+        } catch (err) {
+          set({
+            error: err.message || 'Gagal memuat laporan',
+            loading: false,
+          });
+        }
+      },
+
       fetchReports: async () => {
         const { lastFetched } = get();
         const now = Date.now();
@@ -61,6 +107,13 @@ export const useReportStore = create(
             loading: false,
           });
         }
+      },
+
+      // Public method to force refresh after new report
+      refreshAfterSubmit: async () => {
+        // Reset cache to force fresh fetch
+        set({ lastFetched: null });
+        await get()._refreshReports();
       },
 
       fetchAllReports: async () => {
@@ -121,6 +174,11 @@ export const useReportStore = create(
     }),
     {
       name: 'report-storage',
+      partialize: (state) => ({ 
+        reports: state.reports, 
+        mapReports: state.mapReports,
+        lastFetched: state.lastFetched 
+      }),
     }
   )
 );

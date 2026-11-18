@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   LayoutDashboard, ClipboardList, BarChart3, Map, Settings, LogOut,
   User, Shield, Globe, Info, ChevronDown
@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import Logoapk from '../assets/Logoapk.svg';
+import LogoutConfirm from './ui/LogoutConfirm';
 
 const NAV_ITEMS = [
   { path: '/admin/master', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,11 +25,17 @@ const SETTINGS_SUB_ITEMS = [
 export function AdminSidebar({ activePath }) {
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
-  const handleLogout = () => {
+  const confirmLogout = () => {
     logout();
     navigate('/login', { replace: true });
+    setLogoutOpen(false);
   };
+
+  const cancelLogout = () => setLogoutOpen(false);
+
+  const handleLogout = () => setLogoutOpen(true);
 
   const isSettingsActive = activePath.startsWith('/admin/settings');
 
@@ -130,6 +137,14 @@ export function AdminSidebar({ activePath }) {
           <span>Keluar Portal</span>
         </button>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <LogoutConfirm
+        isOpen={logoutOpen}
+        onClose={cancelLogout}
+        onConfirm={confirmLogout}
+        isLoading={false}
+      />
     </aside>
   );
 }

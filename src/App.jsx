@@ -89,6 +89,11 @@ function App() {
             <TrackingPage />
           </ProtectedRoute>
         } />
+        <Route path="/tracking/:id" element={
+          <ProtectedRoute roles={[USER]}>
+            <TrackingPage />
+          </ProtectedRoute>
+        } />
         <Route path="/profile" element={
           <ProtectedRoute roles={[USER]}>
             <ProfilePage />
@@ -102,6 +107,11 @@ function App() {
         <Route path="/fasilitas" element={
           <ProtectedRoute roles={[USER]}>
             <FacilityCategoriesPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/fasilitas/daftar" element={
+          <ProtectedRoute roles={[USER]}>
+            <FacilityDetailPage />
           </ProtectedRoute>
         } />
         <Route path="/fasilitas/:id" element={

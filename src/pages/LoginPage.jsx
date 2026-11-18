@@ -19,6 +19,7 @@ import {
 import { loginUser, verifyResetAccount, resetPassword } from '../services/authApi';
 import { useAuthStore, roleOf, homePathForRole } from '../stores/useAuthStore';
 import toast from 'react-hot-toast';
+import Logoapk from '../assets/Logoapk.svg';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -171,9 +172,7 @@ function LoginPage() {
         {/* Header Logo */}
         <div className="flex items-center justify-center mt-6 mb-8">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center font-bold text-white text-lg shadow-md shadow-blue-500/20">
-              L
-            </div>
+            <img src={Logoapk} alt="LaporFasum" className="w-10 h-10 shadow-md shadow-blue-500/20" />
             <div>
               <span className="font-extrabold text-slate-900 text-lg tracking-tight">LaporFasum</span>
               <p className="text-[10px] text-blue-600 font-semibold tracking-wider uppercase">Kabupaten Lamongan</p>
