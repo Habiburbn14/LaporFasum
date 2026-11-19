@@ -4,10 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.laporfasum.user',
   appName: 'LaporFasum',
   webDir: 'dist',
-  server: {
-    url: 'http://localhost:5173',
-    cleartext: true
-  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
