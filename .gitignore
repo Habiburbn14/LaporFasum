@@ -40,3 +40,5 @@ coverage
 PERFORMANCE_REPORT.md
 lighthouse-report-home.json
 lighthouse-report-login.json
+
+android/app/release.keystore

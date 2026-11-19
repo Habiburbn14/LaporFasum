@@ -99,11 +99,20 @@ function haversine(lat1, lng1, lat2, lng2) {
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+const MAX_NEAREST_DISTANCE_KM = 15;
+
 export async function findKecamatanByCoords(lat, lng) {
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    console.warn('Invalid coordinates:', lat, lng);
+    return null;
+  }
+
+  console.log('[findKecamatanByCoords] Searching for:', lat, lng);
 
   try {
     const geojson = await loadKecamatanGeoJSON();
+    console.log('[findKecamatanByCoords] Loaded features:', geojson.features.length);
+    
     for (const feature of geojson.features) {
       const { geometry, properties } = feature;
       if (!geometry) continue;
@@ -116,6 +125,7 @@ export async function findKecamatanByCoords(lat, lng) {
 
       for (const polygon of polygons) {
         if (pointInPolygon(lng, lat, polygon)) {
+          console.log('[findKecamatanByCoords] Found via polygon:', properties.nama_kecamatan);
           return {
             id_kecamatan:
               getKecamatanIdFromKode(properties.kode) ||
@@ -127,6 +137,7 @@ export async function findKecamatanByCoords(lat, lng) {
         }
       }
     }
+    console.log('[findKecamatanByCoords] No polygon match found');
   } catch (e) {
     console.error('Gagal mendeteksi kecamatan via polygon:', e);
   }
@@ -143,19 +154,26 @@ export async function findKecamatanByCoords(lat, lng) {
       }
     }
     if (nearest) {
-      return {
-        id_kecamatan:
-          getKecamatanIdFromKode(nearest.kode) ||
-          getKecamatanByName(nearest.nama_kecamatan)?.id_kecamatan ||
-          null,
-        nama_kecamatan: nearest.nama_kecamatan,
-        match: 'nearest',
-      };
+      console.log('[findKecamatanByCoords] Nearest centroid:', nearest.nama_kecamatan, 'dist:', minDist.toFixed(2), 'km');
+      if (minDist <= MAX_NEAREST_DISTANCE_KM) {
+        console.log('[findKecamatanByCoords] Using nearest centroid (within threshold)');
+        return {
+          id_kecamatan:
+            getKecamatanIdFromKode(nearest.kode) ||
+            getKecamatanByName(nearest.nama_kecamatan)?.id_kecamatan ||
+            null,
+          nama_kecamatan: nearest.nama_kecamatan,
+          match: 'nearest',
+        };
+      } else {
+        console.warn('[findKecamatanByCoords] Nearest centroid too far:', minDist.toFixed(2), 'km >', MAX_NEAREST_DISTANCE_KM, 'km');
+      }
     }
   } catch (e) {
     console.error('Gagal mendeteksi kecamatan via centroid:', e);
   }
 
+  console.warn('[findKecamatanByCoords] No kecamatan found for coordinates:', lat, lng);
   return null;
 }
 

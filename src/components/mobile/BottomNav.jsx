@@ -60,6 +60,7 @@ function BottomNav() {
       }
 
       // 4. Detect kecamatan by coordinates
+      console.log('[BottomNav] GPS coordinates:', validPos.coords.latitude, validPos.coords.longitude, 'accuracy:', validPos.coords.accuracy);
       const kecamatan = await findKecamatanByCoords(
         validPos.coords.latitude,
         validPos.coords.longitude
@@ -68,8 +69,10 @@ function BottomNav() {
       // 5. Validate that we found a valid kecamatan in Lamongan
       // If kecamatan is null or not in Lamongan, we have a problem
       if (!kecamatan) {
-        console.warn('Kecamatan tidak ditemukan untuk koordinat:', validPos.coords.latitude, validPos.coords.longitude);
+        console.warn('[BottomNav] Kecamatan tidak ditemukan untuk koordinat:', validPos.coords.latitude, validPos.coords.longitude);
         // Don't fail - still save but with "Lokasi Terdeteksi"
+      } else {
+        console.log('[BottomNav] Detected kecamatan:', kecamatan.nama_kecamatan, 'match type:', kecamatan.match);
       }
 
       // 6. Save to sessionStorage

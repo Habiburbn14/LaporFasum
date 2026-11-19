@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Send, ChevronDown, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { getCurrentLocation } from '../../services/capacitor';
+import { findKecamatanByCoords } from '../../utils/kecamatan';
 
 const KECAMATAN_LIST = [
   'Sukorame', 'Bluluk', 'Modo', 'Ngimbang', 'Babat', 'Kedungpring',
@@ -60,8 +62,6 @@ export default function FormStepPage() {
   const handleRedetect = async () => {
     toast.loading('Mendeteksi ulang lokasi...', { id: 'redetect-gps' });
     try {
-      const { getCurrentLocation } = await import('../../services/capacitor');
-      const { findKecamatanByCoords } = await import('../../utils/kecamatan');
       const pos = await getCurrentLocation(true);
       if (pos) {
         const kecamatan = await findKecamatanByCoords(pos.coords.latitude, pos.coords.longitude);

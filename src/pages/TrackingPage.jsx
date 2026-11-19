@@ -82,7 +82,6 @@ function TrackingPage() {
           lat: r.lat ?? r.latitude,
           lng: r.lng ?? r.longitude,
           nama_lengkap: r.nama_lengkap,
-          nik: r.nik,
           email: r.email,
           status_terkini: r.status_terkini,
           status_perawatan: r.status_perawatan,
@@ -253,20 +252,16 @@ function TrackingPage() {
 
           {/* Meta Info */}
           <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3">
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+            <div className="flex flex-wrap gap-3 text-xs">
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1">
                 <p className="text-[10px] text-slate-400 font-medium mb-0.5">Kategori</p>
                 <p className="font-semibold text-slate-700 truncate">{singleReport.kategori || '-'}</p>
               </div>
-              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex-1">
                 <p className="text-[10px] text-slate-400 font-medium mb-0.5">Pelapor</p>
                 <p className="font-semibold text-slate-700 truncate">{singleReport.nama_lengkap || '-'}</p>
               </div>
-              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                <p className="text-[10px] text-slate-400 font-medium mb-0.5">NIK</p>
-                <p className="font-mono font-semibold text-slate-700 truncate">{singleReport.nik || '-'}</p>
-              </div>
-              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex-2">
                 <p className="text-[10px] text-slate-400 font-medium mb-0.5">Waktu Lapor</p>
                 <p className="font-semibold text-slate-700 truncate">{singleReport.tanggal ? formatDateFull(singleReport.tanggal) : '-'}</p>
               </div>
