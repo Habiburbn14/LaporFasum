@@ -36,3 +36,7 @@ coverage
 # Misc
 *.local
 .cache
+
+PERFORMANCE_REPORT.md
+lighthouse-report-home.json
+lighthouse-report-login.json
