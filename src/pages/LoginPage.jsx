@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
   User, 
   Lock, 
@@ -16,14 +16,17 @@ import {
   ArrowLeft,
   Check
 } from 'lucide-react';
-import { loginUser, verifyResetAccount, resetPassword } from '../services/authApi';
+import { loginUser, loginAdmin, verifyResetAccount, resetPassword } from '../services/authApi';
 import { useAuthStore, roleOf, homePathForRole } from '../stores/useAuthStore';
 import toast from 'react-hot-toast';
 import Logoapk from '../assets/Logoapk.svg';
+import { Capacitor } from '@capacitor/core';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuthStore();
+  const isAdminRoute = location.pathname === '/login-admin';
   const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -49,7 +52,12 @@ function LoginPage() {
     }
 
     setLoading(true);
-    const result = await loginUser(formData.identifier.trim(), formData.password);
+    let result;
+    if (isAdminRoute) {
+      result = await loginAdmin(formData.identifier.trim(), formData.password);
+    } else {
+      result = await loginUser(formData.identifier.trim(), formData.password);
+    }
     setLoading(false);
 
     if (result.success) {

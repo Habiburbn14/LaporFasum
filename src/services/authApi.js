@@ -14,7 +14,7 @@ const formHeaders = () => {
   };
 };
 
-// *LOGIN
+// *LOGIN USER (Android App)
 export const loginUser = async (identifier, password) => {
   try {
     const response = await axios.post(
@@ -34,6 +34,38 @@ export const loginUser = async (identifier, password) => {
     return { success: false, error: 'Login gagal' };
   } catch (error) {
     let errorMessage = 'Login gagal';
+    const detail = error.response?.data?.detail;
+    if (Array.isArray(detail)) {
+      errorMessage = detail.map(d => d.msg || d.message).join(', ');
+    } else if (typeof detail === 'object' && detail !== null) {
+      errorMessage = detail.msg || detail.message || JSON.stringify(detail);
+    } else if (typeof detail === 'string') {
+      errorMessage = detail;
+    }
+    return { success: false, error: errorMessage };
+  }
+};
+
+// *LOGIN ADMIN (Web Dashboard)
+export const loginAdmin = async (identifier, password) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/auth/login-admin`,
+      { identifier, password },
+      { headers: jsonHeaders() }
+    );
+
+    if (response.data.access_token) {
+      await persistedAuthStorage.setItem('access_token', response.data.access_token);
+      return { 
+        success: true, 
+        token: response.data.access_token,
+        user: response.data.user
+      };
+    }
+    return { success: false, error: 'Login admin gagal' };
+  } catch (error) {
+    let errorMessage = 'Login admin gagal';
     const detail = error.response?.data?.detail;
     if (Array.isArray(detail)) {
       errorMessage = detail.map(d => d.msg || d.message).join(', ');

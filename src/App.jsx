@@ -17,6 +17,7 @@ import TriageReportsPage from './pages/TriageReportsPage';
 import GISMapViewPage from './pages/GISMapViewPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
+import LandingPage from './pages/LandingPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
 import { ROLE } from './stores/useAuthStore';
@@ -53,12 +54,13 @@ function App() {
         }}
       />
       <Routes>
-        <Route path="/" element={
-          <ProtectedRoute roles={[USER]}>
-            <HomePage />
-          </ProtectedRoute>
-        } />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={
+          <PublicRoute>
+            <LoginPage />
+          </PublicRoute>
+        } />
+        <Route path="/login-admin" element={
           <PublicRoute>
             <LoginPage />
           </PublicRoute>

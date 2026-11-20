@@ -23,6 +23,14 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    // Rename APK output (modern Gradle API)
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            def fileName = "LaporFasum-v${versionName}-${variant.buildType.name}.apk"
+            output.outputFileName = fileName
+        }
+    }
 }
 
 repositories {

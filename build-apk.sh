@@ -14,7 +14,7 @@ cd android
 ./gradlew assembleDebug
 cd ..
 
-APK_PATH="android/app/build/outputs/apk/debug/app-debug.apk"
+APK_PATH="android/app/build/outputs/apk/debug/LaporFasum-v1.0-debug.apk"
 if [ -f "$APK_PATH" ]; then
     SIZE=$(du -h "$APK_PATH" | cut -f1)
     echo "✅ APK built successfully!"

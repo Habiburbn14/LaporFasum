@@ -6,6 +6,7 @@ function ProtectedRoute({ children, roles }) {
   const { user, loading } = useAuthStore();
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname === '/login-admin';
   const role = roleOf(user);
 
   if (loading) {
@@ -19,7 +20,7 @@ function ProtectedRoute({ children, roles }) {
   if (!user) {
     return (
       <Navigate
-        to={'/login'}
+        to={isAdminRoute ? '/login-admin' : '/login'}
         replace
         state={{ from: location }}
       />
