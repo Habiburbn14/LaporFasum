@@ -17,6 +17,7 @@ import AdminSidebar from '../components/AdminSidebar';
 import NotificationPopup from '../components/ui/NotificationPopup';
 import { getRoadNetwork } from '../services/userApi';
 import { findKecamatanByCoords } from '../utils/kecamatan';
+import { roleOf, ROLE } from '../stores/useAuthStore';
 
 const STATUS_STYLES = {
   'Menunggu Verifikasi': 'bg-amber-100 text-amber-700 border-amber-200/60',
@@ -60,6 +61,10 @@ function GISMapViewPage() {
   const [activeLayers, setActiveLayers] = useState(initialActiveLayers);
 
   const { reports, mapReports, fetchReports, fetchMapPoints } = useReportStore();
+
+  const userRole = roleOf(user);
+  const isAdminKecamatan = userRole === ROLE.ADMIN_KECAMATAN;
+  const isAdminKabupaten = userRole === ROLE.ADMIN_KABUPATEN;
 
   // Map center for Lamongan (Admin)
   const center = [-7.169249504786527, 112.33849173392773];
@@ -498,7 +503,9 @@ function GISMapViewPage() {
         <main className="flex-1 relative w-full h-[calc(100vh-4rem)]">
           {/* Filter reports based on toggle */}
           <CustomMap
-            reports={showAllReports ? mapReports.filter(r => r.lat && r.lng) : reports.filter(r => r.lat && r.lng)}
+            reports={(isAdminKecamatan || isAdminKabupaten)
+              ? (showAllReports ? mapReports : reports).filter(r => r.lat && r.lng && r.status_terkini === 'Diterima')
+              : (showAllReports ? mapReports : reports).filter(r => r.lat && r.lng)}
             activeLayers={activeLayers}
             baseMap={viewMode === 'satellite' ? 'satellite' : 'openstreetmap'}
             onResetFocus={resetFocusTrigger}

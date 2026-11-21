@@ -50,6 +50,8 @@ function ImageWithFallback({ src, alt, className = '' }) {
   );
 }
 
+import { ROLE, roleOf } from '../stores/useAuthStore';
+
 function TriageReportsPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
@@ -63,6 +65,10 @@ function TriageReportsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
+  const userRole = roleOf(user);
+  const isAdminKecamatan = userRole === ROLE.ADMIN_KECAMATAN;
+  const isAdminKabupaten = userRole === ROLE.ADMIN_KABUPATEN;
+
   const handleLogout = () => setLogoutOpen(true);
 
   const confirmLogout = () => {
@@ -75,15 +81,35 @@ function TriageReportsPage() {
 
   const reportId = (r) => r.id_laporan || r.ticket_code || r.id;
 
-  const countByStatus = {
-    all: reports.length,
-    menunggu: reports.filter(r => r.status_terkini === 'Menunggu Verifikasi').length,
-    diterima: reports.filter(r => r.status_terkini === 'Diterima').length,
-    selesai: reports.filter(r => r.status_terkini === 'Selesai').length,
-    ditolak: reports.filter(r => r.status_terkini === 'Ditolak').length,
+  // Filter reports based on role
+  const getVisibleReports = () => {
+    if (isAdminKecamatan) {
+      // Admin kecamatan: see 'Menunggu Verifikasi' and 'Diterima' from their kecamatan
+      // (useLaporanList already filters by id_kecamatan)
+      return reports.filter(r => 
+        r.status_terkini === 'Menunggu Verifikasi' || 
+        r.status_terkini === 'Diterima' ||
+        r.status_terkini === 'Ditolak'
+      );
+    }
+    if (isAdminKabupaten) {
+      // Admin kabupaten: only 'Diterima' reports (evaluated by kecamatan)
+      return reports.filter(r => r.status_terkini === 'Diterima');
+    }
+    return reports;
   };
 
-  const filteredReports = reports.filter(r => {
+  const visibleReports = getVisibleReports();
+
+  const countByStatus = {
+    all: visibleReports.length,
+    menunggu: visibleReports.filter(r => r.status_terkini === 'Menunggu Verifikasi').length,
+    diterima: visibleReports.filter(r => r.status_terkini === 'Diterima').length,
+    selesai: visibleReports.filter(r => r.status_terkini === 'Selesai').length,
+    ditolak: visibleReports.filter(r => r.status_terkini === 'Ditolak').length,
+  };
+
+  const filteredReports = visibleReports.filter(r => {
     const term = searchTerm.toLowerCase();
     const matchSearch = searchTerm === '' ||
       String(r.id_laporan || r.ticket_code || '').toLowerCase().includes(term) ||
@@ -437,10 +463,12 @@ function TriageReportsPage() {
                         {getStatusBadge(report.status_terkini)}
                       </td>
 
-                      {/* Actions */}
+                      {/* Actions - Visibility based on role */}
                       <td className="py-3.5 px-5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center justify-end gap-1.5">
-                          {report.status_terkini === 'Menunggu Verifikasi' ? (
+                          {/* Admin Kecamatan: Can accept/reject 'Menunggu Verifikasi', see 'Diterima' (no Selesai) */}
+                          {/* Admin Kabupaten: Can mark 'Diterima' as 'Selesai' */}
+                          {(isAdminKecamatan || isAdminKabupaten) && report.status_terkini === 'Menunggu Verifikasi' ? (
                             <>
                               <button
                                 onClick={() => openAction(report, 'accept')}
@@ -459,7 +487,7 @@ function TriageReportsPage() {
                                 Tolak
                               </button>
                             </>
-                          ) : report.status_terkini === 'Diterima' ? (
+                          ) : isAdminKabupaten && report.status_terkini === 'Diterima' ? (
                             <button
                               onClick={() => openAction(report, 'complete')}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
