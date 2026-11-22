@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye, X, MapPin,
-  RefreshCw, Filter, Check, ShieldCheck, Inbox, Loader2
+  RefreshCw, Filter, Check, ShieldCheck, Inbox, Loader2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -55,7 +55,7 @@ import { ROLE, roleOf } from '../stores/useAuthStore';
 function TriageReportsPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { reports, setReports, loading, error, reload } = useLaporanList();
+  const { reports, setReports, loading, error, reload, page, totalPages, setPage, hasMore } = useLaporanList();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [selectedReport, setSelectedReport] = useState(null);
@@ -522,6 +522,31 @@ function TriageReportsPage() {
                 <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
                   Tidak ditemukan laporan yang cocok dengan filter atau kata kunci pencarian saat ini.
                 </p>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 px-4 py-4 border-t border-slate-100">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Halaman sebelumnya"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="px-4 text-sm font-medium text-slate-700">
+                  Halaman {page} dari {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  aria-label="Halaman selanjutnya"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>

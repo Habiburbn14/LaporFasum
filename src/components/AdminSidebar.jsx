@@ -18,7 +18,6 @@ const NAV_ITEMS = [
 const SETTINGS_SUB_ITEMS = [
   { path: '/admin/settings', label: 'Profile Saya', icon: User },
   { path: '/admin/settings/account', label: 'Akun & Keamanan', icon: Shield },
-  { path: '/admin/settings/notifications', label: 'Notifikasi', icon: Globe },
   { path: '/admin/settings/about', label: 'Tentang Aplikasi', icon: Info },
 ];
 

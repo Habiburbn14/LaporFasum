@@ -64,10 +64,31 @@ function SettingsPage() {
 }
 
 function ProfileTab({ user }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    nama: user?.nama_lengkap || user?.nama || 'Admin Kabupaten',
+    email: user?.email || 'admin@lamongan.go.id',
+    telepon: '081234567890',
+    unitKerja: 'Dinas PUPR Lamongan',
+  });
+
+  const handleSave = () => {
+    // Save logic
+    setIsEditing(false);
+  };
+
   return (
     <>
-      <div className="p-6 border-b border-slate-100">
+      <div className="p-6 border-b border-slate-100 flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-900">Profil Admin</h2>
+        {!isEditing && (
+          <button 
+            onClick={() => setIsEditing(true)}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors"
+          >
+            Edit Profil
+          </button>
+        )}
       </div>
       <div className="p-6 space-y-6">
         <div className="flex items-start gap-6">
@@ -75,9 +96,9 @@ function ProfileTab({ user }) {
             {user?.nama_lengkap?.charAt(0) || user?.nama?.charAt(0) || 'A'}
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-slate-900">{user?.nama_lengkap || user?.nama || 'Admin Kabupaten'}</h3>
-            <p className="text-sm text-slate-500 mt-1">{user?.email || 'admin@lamongan.go.id'}</p>
-            <p className="text-sm text-slate-500 mt-0.5">Dinas PUPR Lamongan</p>
+            <h3 className="text-lg font-semibold text-slate-900">{formData.nama}</h3>
+            <p className="text-sm text-slate-500 mt-1">{formData.email}</p>
+            <p className="text-sm text-slate-500 mt-0.5">{formData.unitKerja}</p>
           </div>
         </div>
 
@@ -87,16 +108,20 @@ function ProfileTab({ user }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Nama Lengkap</label>
               <input 
                 type="text" 
-                defaultValue={user?.nama_lengkap || 'Admin Kabupaten'}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                disabled={!isEditing}
+                value={formData.nama}
+                onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Email</label>
               <input 
                 type="email" 
-                defaultValue={user?.email || 'admin@lamongan.go.id'}
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                disabled={!isEditing}
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -105,29 +130,41 @@ function ProfileTab({ user }) {
               <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Nomor Telepon</label>
               <input 
                 type="tel" 
-                defaultValue="081234567890"
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                disabled={!isEditing}
+                value={formData.telepon}
+                onChange={(e) => setFormData({ ...formData, telepon: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 uppercase mb-1.5">Unit Kerja</label>
               <input 
                 type="text" 
-                defaultValue="Dinas PUPR Lamongan"
-                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                disabled={!isEditing}
+                value={formData.unitKerja}
+                onChange={(e) => setFormData({ ...formData, unitKerja: e.target.value })}
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100 disabled:text-slate-500 disabled:cursor-not-allowed"
               />
             </div>
           </div>
         </div>
       </div>
-      <div className="p-6 bg-slate-50 flex justify-end gap-3 border-t border-slate-100">
-        <button className="px-4 py-2 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-200 transition-colors">
-          Batal
-        </button>
-        <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors">
-          Simpan Perubahan
-        </button>
-      </div>
+      {isEditing && (
+        <div className="p-6 bg-slate-50 flex justify-end gap-3 border-t border-slate-100">
+          <button 
+            onClick={() => setIsEditing(false)}
+            className="px-4 py-2 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-200 transition-colors"
+          >
+            Batal
+          </button>
+          <button 
+            onClick={handleSave}
+            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors"
+          >
+            Simpan Perubahan
+          </button>
+        </div>
+      )}
     </>
   );
 }

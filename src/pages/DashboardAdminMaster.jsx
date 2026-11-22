@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye, Loader2
+  Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye, Loader2, ChevronRight
 } from 'lucide-react';
 import { MOCK_FACILITY_CATEGORIES, MOCK_WEEKLY_CHART, MOCK_MONTHLY_CHART } from '../utils/mockData';
 import WeeklyChart from '../components/mobile/WeeklyChart';
@@ -17,7 +17,7 @@ import AdminSidebar from '../components/AdminSidebar';
 function DashboardAdminMaster() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { reports, loading, error, reload } = useLaporanList();
+  const { reports, loading, error, reload, page, totalPages, setPage } = useLaporanList();
   const [searchCategory, setSearchCategory] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -93,7 +93,8 @@ function DashboardAdminMaster() {
     return matchCategory && matchStatus;
   });
 
-  const displayedReports = showAll ? filteredReports : filteredReports.slice(0, 10);
+  // Show only first 10 reports (page 1)
+  const displayedReports = filteredReports.slice(0, 10);
 
   const handleLogout = () => {
     setLogoutOpen(true);
@@ -395,6 +396,19 @@ function DashboardAdminMaster() {
             {displayedReports.length === 0 && (
               <div className="p-12 text-center">
                 <p className="text-slate-400">Tidak ada laporan</p>
+              </div>
+            )}
+
+            {/* Lihat Semua Button */}
+            {filteredReports.length > displayedReports.length && (
+              <div className="text-center pt-4">
+                <button
+                  onClick={() => navigate('/admin/triage')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-xl transition-colors shadow-sm"
+                >
+                  Lihat Semua Laporan ({filteredReports.length})
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
             )}
           </div>

@@ -200,12 +200,15 @@ export const getMyReports = async () => {
   }
 };
 
-export const getReportsByFilter = async (filter = 'all') => {
+export const getReportsByFilter = async (filter = 'all', page = 1, limit = 10) => {
   try {
     const endpoint = filter === 'mine' ? '/laporan/saya' : '/laporan';
     const response = await axios.get(
       `${BASE_URL}${endpoint}`,
-      { headers: authHeaders() }
+      { 
+        headers: authHeaders(),
+        params: { page, limit }
+      }
     );
 
     return { success: true, data: response.data };
