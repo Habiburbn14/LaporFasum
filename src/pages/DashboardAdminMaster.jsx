@@ -288,10 +288,10 @@ function DashboardAdminMaster() {
                     <GeoJSON
                       data={lamonganBoundary}
                       style={{
-                        color: '#EF4444',
+                        color: '#2563eb',
                         weight: 2.5,
                         opacity: 1,
-                        fillColor: '#EF4444',
+                        fillColor: '#2563eb',
                         fillOpacity: 0.05,
                         lineCap: 'round',
                         lineJoin: 'round',

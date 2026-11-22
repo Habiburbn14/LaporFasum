@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Bell, BellOff } from 'lucide-react';
+import { Bell, BellOff, ChevronDown, Loader2 } from 'lucide-react';
 import { masterAPI } from '../../services/api';
 
 const normalizeNotifications = (payload) => {
@@ -41,14 +41,26 @@ function NotificationPopup() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const containerRef = useRef(null);
+  const listRef = useRef(null);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (pageNum = 1, append = false) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await masterAPI.getNotifications();
-      setNotifications(normalizeNotifications(res.data));
+      const res = await masterAPI.getNotifications({ page: pageNum, limit: 10 });
+      const normalized = normalizeNotifications(res.data);
+      const pagination = res.data?.pagination || res.data?.meta || {};
+      const totalPages = pagination.total_pages || pagination.last_page || 1;
+      
+      if (append) {
+        setNotifications(prev => [...prev, ...normalized]);
+      } else {
+        setNotifications(normalized);
+      }
+      setHasMore(pageNum < totalPages);
     } catch (err) {
       setError('Gagal memuat notifikasi');
     } finally {
@@ -58,12 +70,12 @@ function NotificationPopup() {
 
   // Fetch once on mount for badge count
   useEffect(() => {
-    fetchNotifications();
+    fetchNotifications(1, false);
   }, [fetchNotifications]);
 
   // Fetch fresh data when opening
   useEffect(() => {
-    if (open) fetchNotifications();
+    if (open) fetchNotifications(1, false);
   }, [open, fetchNotifications]);
 
   // Close when clicking outside
@@ -84,6 +96,19 @@ function NotificationPopup() {
       document.removeEventListener('keydown', handleEscape);
     };
   }, [open]);
+
+  const handleScroll = useCallback((e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 50 && hasMore && !loading) {
+      setPage(prev => prev + 1);
+    }
+  }, [hasMore, loading]);
+
+  useEffect(() => {
+    if (page > 1) {
+      fetchNotifications(page, true);
+    }
+  }, [page, fetchNotifications]);
 
   const unreadCount = notifications.filter(isUnread).length;
 
@@ -115,10 +140,10 @@ function NotificationPopup() {
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto">
-            {loading && (
+          <div className="max-h-80 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
+            {loading && notifications.length === 0 && (
               <div className="py-8 flex items-center justify-center">
-                <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
               </div>
             )}
 
@@ -127,7 +152,7 @@ function NotificationPopup() {
                 <p className="text-xs text-red-500">{error}</p>
                 <button
                   type="button"
-                  onClick={fetchNotifications}
+                  onClick={() => fetchNotifications(1, false)}
                   className="mt-2 text-xs font-medium text-blue-600 hover:underline"
                 >
                   Coba lagi
@@ -167,6 +192,18 @@ function NotificationPopup() {
                 </div>
               </div>
             ))}
+
+            {hasMore && !loading && (
+              <div className="px-4 py-3 text-center border-t border-slate-100">
+                <button
+                  onClick={() => setPage(prev => prev + 1)}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1"
+                >
+                  <ChevronDown className="w-3 h-3" />
+                  Muat lebih banyak
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -515,6 +515,67 @@ function GISMapViewPage() {
             onLocationError={handleLocationError}
             onLayerLoadingChange={handleLayerLoadingChange}
           />
+
+          {/* Floating Bottom Card Preview saat Titik Laporan Diklik (Admin) */}
+          {selectedReportOnMap && (
+            <div className="absolute bottom-6 left-6 right-6 z-[999] bg-white rounded-2xl shadow-2xl border border-slate-200 p-4 animate-in slide-in-from-bottom-4 duration-200 max-w-[1440px] mx-auto">
+              <div className="flex gap-4 items-start mb-3">
+                <div className="w-20 h-20 rounded-xl bg-slate-100 flex-shrink-0 flex items-center justify-center overflow-hidden border border-slate-100">
+                  {selectedReportOnMap.foto ? (
+                    <img
+                      src={selectedReportOnMap.foto}
+                      alt={selectedReportOnMap.judul}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <AlertCircle className="w-10 h-10 text-slate-300" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] font-mono font-bold text-blue-600">
+                      #{selectedReportOnMap.ticket_code || selectedReportOnMap.id}
+                    </span>
+                    <span
+                      className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${getStatusStyle(
+                        selectedReportOnMap.status_terkini || selectedReportOnMap.status
+                      )}`}
+                    >
+                      {selectedReportOnMap.status_terkini || selectedReportOnMap.status}
+                    </span>
+                  </div>
+                  <p className="text-sm font-bold text-slate-900 line-clamp-1">
+                    {selectedReportOnMap.judul}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-0.5 truncate">
+                    {selectedReportOnMap.kategori || 'Fasilitas Umum'}
+                  </p>
+                  <div className="flex items-center gap-1 mt-1 text-[11px] text-slate-400">
+                    <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                    <span className="truncate">{selectedReportOnMap.kecamatan || 'Lamongan'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-slate-100">
+                <button
+                  onClick={() => setSelectedReportOnMap(null)}
+                  className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-xl text-xs transition-colors"
+                >
+                  Tutup
+                </button>
+                <button
+                  onClick={() => {
+                    navigate('/admin/triage');
+                  }}
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl text-xs flex items-center justify-center gap-1.5 transition-colors shadow-sm"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Lihat di Triage
+                </button>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>

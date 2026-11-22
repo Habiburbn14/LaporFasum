@@ -231,9 +231,18 @@ function CustomMap({
 
     if (!mapInstanceRef.current) {
       // Titik pusat Kabupaten Lamongan
+      const center = [-7.169249504786527, 112.33849173392773];
+      const bounds = L.latLngBounds(
+        [-7.5, 111.8],  // Southwest (lebih lebar dari Lamongan)
+        [-6.8, 113.0]   // Northeast (lebih lebar dari Lamongan)
+      );
+
       mapInstanceRef.current = L.map(mapRef.current, {
         zoomControl: false,
-      }).setView([-7.1199, 112.3385], 11);
+        maxBounds: bounds,
+        maxBoundsViscosity: 1.0, // Mencegah drag keluar batas
+        minZoom: 10,
+      }).setView(center, 11);
 
       // Tambahkan zoom control di kanan bawah
       L.control.zoom({ position: 'bottomright' }).addTo(mapInstanceRef.current);

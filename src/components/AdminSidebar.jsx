@@ -117,7 +117,6 @@ export function AdminSidebar({ activePath }) {
                     >
                       <Icon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-blue-300' : 'text-slate-400'}`} />
                       <span className="truncate">{item.label}</span>
-                      {isSubActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400" />}
                     </button>
                   );
                 })}

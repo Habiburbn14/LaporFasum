@@ -12,7 +12,6 @@ function SettingsPage() {
   const getActiveTab = () => {
     const path = location.pathname;
     if (path.endsWith('/settings/account')) return 'account';
-    if (path.endsWith('/settings/notifications')) return 'notifications';
     if (path.endsWith('/settings/about')) return 'about';
     return 'profile';
   };
@@ -29,14 +28,13 @@ function SettingsPage() {
     const paths = {
       profile: '/admin/settings',
       account: '/admin/settings/account',
-      notifications: '/admin/settings/notifications',
       about: '/admin/settings/about',
     };
     navigate(paths[tab]);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans">
+    <>
       {/* Admin Sidebar */}
       <AdminSidebar activePath={location.pathname} />
 
@@ -56,19 +54,18 @@ function SettingsPage() {
             {/* Tab Content */}
             {activeTab === 'profile' && <ProfileTab user={user} />}
             {activeTab === 'account' && <AccountTab />}
-            {activeTab === 'notifications' && <NotificationsTab />}
             {activeTab === 'about' && <AboutTab />}
           </div>
         </main>
         
       </div>
-    </div>
+    </>
   );
 }
 
 function ProfileTab({ user }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <>
       <div className="p-6 border-b border-slate-100">
         <h2 className="text-lg font-bold text-slate-900">Profil Admin</h2>
       </div>
@@ -131,13 +128,13 @@ function ProfileTab({ user }) {
           Simpan Perubahan
         </button>
       </div>
-    </div>
+    </>
   );
 }
 
 function AccountTab() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <>
       <div className="p-6 border-b border-slate-100">
         <h2 className="text-lg font-bold text-slate-900">Akun & Keamanan</h2>
       </div>
@@ -171,42 +168,13 @@ function AccountTab() {
           Update Password
         </button>
       </div>
-    </div>
-  );
-}
-
-function NotificationsTab() {
-  return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div className="p-6 border-b border-slate-100">
-        <h2 className="text-lg font-bold text-slate-900">Notifikasi</h2>
-      </div>
-      <div className="p-6 space-y-4">
-        {[
-          { id: 'email', title: 'Email Notifications', desc: 'Terima laporan baru dan update via email', checked: true },
-          { id: 'sms', title: 'SMS Notifications', desc: 'Dapatkan notifikasi penting via SMS', checked: false },
-          { id: 'push', title: 'Push Notifications', desc: 'Notifikasi real-time di device', checked: true },
-          { id: 'daily', title: 'Daily Digest', desc: 'Ringkasan harian laporan', checked: true },
-        ].map((item) => (
-          <div key={item.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-            <div>
-              <h4 className="font-medium text-slate-900">{item.title}</h4>
-              <p className="text-xs text-slate-500 mt-1">{item.desc}</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" defaultChecked={item.checked} />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-            </label>
-          </div>
-        ))}
-      </div>
-    </div>
+    </>
   );
 }
 
 function AboutTab() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+    <>
       <div className="p-6 border-b border-slate-100">
         <h2 className="text-lg font-bold text-slate-900">Tentang Aplikasi</h2>
       </div>
@@ -252,14 +220,10 @@ function AboutTab() {
               <span className="w-4 h-4 text-slate-400">📞</span>
               Hotline: 0812-3456-7890
             </p>
-            <p className="flex items-center gap-3">
-              <span className="w-4 h-4 text-slate-400">🌐</span>
-              Website: lapor.lamongon.go.id
-            </p>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
