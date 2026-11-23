@@ -1,15 +1,32 @@
 import React, { useEffect, useState } from 'react';
+import { useAuthStore } from '../../stores/useAuthStore';
 import Dashboard_Logo from '../../assets/Dashboard_Logo.svg';
 
-export function SplashScreen({ duration = 3000 }) {
+export function SplashScreen({ minDuration = 1500 }) {
   const [isVisible, setIsVisible] = useState(true);
+  const loading = useAuthStore((state) => state.loading);
 
   useEffect(() => {
+    let mounted = true;
+    
+    const checkReady = () => {
+      if (!loading && mounted) {
+        setIsVisible(false);
+      } else if (mounted) {
+        requestAnimationFrame(checkReady);
+      }
+    };
+
+    // Minimum duration timer
     const timer = setTimeout(() => {
-      setIsVisible(false);
-    }, duration);
-    return () => clearTimeout(timer);
-  }, [duration]);
+      checkReady();
+    }, minDuration);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
+  }, [loading, minDuration]);
 
   if (!isVisible) return null;
 

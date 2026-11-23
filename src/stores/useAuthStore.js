@@ -85,15 +85,31 @@ export const useAuthStore = create(
       storage: createJSONStorage(() => persistedAuthStorage),
       partialize: (state) => ({ token: state.token, user: state.user }),
       onRehydrateStorage: () => (state, error) => {
+        console.log('[AuthStore] Rehydration complete, error:', error);
         if (error) {
           console.error('Gagal memuat sesi tersimpan:', error);
           useAuthStore.setState({ loading: false });
           return;
         }
-        if (state) {
-          state.setLoading(false);
-          if (state.token) state.fetchUser();
+        if (state && state.token) {
+          console.log('[AuthStore] Token found, fetching user...');
+          let completed = false;
+          // Match axios timeout (15s) - let axios handle the timeout
+          const timeout = setTimeout(() => {
+            if (!completed) {
+              console.warn('fetchUser timeout (15s), forcing loading=false');
+              useAuthStore.setState({ loading: false });
+            }
+          }, 15000);
+          
+          state.fetchUser().finally(() => {
+            completed = true;
+            clearTimeout(timeout);
+            console.log('[AuthStore] fetchUser completed, loading=false');
+            useAuthStore.setState({ loading: false });
+          });
         } else {
+          console.log('[AuthStore] No token, loading=false');
           useAuthStore.setState({ loading: false });
         }
       },

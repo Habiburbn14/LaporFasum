@@ -1,9 +1,11 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore, roleOf, homePathForRole } from '../stores/useAuthStore';
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuthStore();
+  const location = useLocation();
+  const isLoginPage = location.pathname === '/login' || location.pathname === '/login-admin';
 
   if (loading) {
     return (
@@ -13,7 +15,8 @@ function PublicRoute({ children }) {
     );
   }
 
-  if (user) {
+  if (user && !isLoginPage) {
+    // Only redirect logged-in users if they're NOT on a login page
     return <Navigate to={homePathForRole(roleOf(user))} replace />;
   }
 

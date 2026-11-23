@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useLaporanList } from '../hooks/useLaporanList';
-import { laporanAPI } from '../services/api';
+import { laporanAPI, adminAPI } from '../services/api';
 import { getErrorMessage } from '../utils/error';
 import ErrorState from '../components/ui/ErrorState';
 import EmptyState from '../components/ui/EmptyState';
@@ -62,6 +62,7 @@ function TriageReportsPage() {
   const [actionReport, setActionReport] = useState(null);
   const [actionType, setActionType] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [completeMessage, setCompleteMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
@@ -131,6 +132,7 @@ function TriageReportsPage() {
     setActionReport(null);
     setActionType(null);
     setRejectReason('');
+    setCompleteMessage('');
   };
 
   const confirmAction = async () => {
@@ -139,6 +141,10 @@ function TriageReportsPage() {
     const isComplete = actionType === 'complete';
     if (isReject && !rejectReason.trim()) {
       toast.error('Alasan penolakan wajib diisi');
+      return;
+    }
+    if (isComplete && isAdminKabupaten && !completeMessage.trim()) {
+      toast.error('Pesan penyelesaian wajib diisi');
       return;
     }
 
@@ -163,7 +169,11 @@ function TriageReportsPage() {
 
     setSubmitting(true);
     try {
-      await laporanAPI.updateStatus(id, newStatus, reason, kewenangan);
+      if (isComplete && isAdminKabupaten) {
+        await adminAPI.updateStatus(id, newStatus, reason, kewenangan, completeMessage);
+      } else {
+        await laporanAPI.updateStatus(id, newStatus, reason, kewenangan);
+      }
       setReports(prev => prev.map(r =>
         reportId(r) === id
           ? { ...r, status: newStatus, status_terkini: newStatus, ...(isReject ? { tanggapan: reason } : {}) }
@@ -690,18 +700,20 @@ function TriageReportsPage() {
           >
             <div className="flex items-start gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                actionType === 'reject' ? 'bg-rose-100 text-rose-600' : 'bg-emerald-100 text-emerald-600'
+                actionType === 'reject' ? 'bg-rose-100 text-rose-600' : (actionType === 'complete' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600')
               }`}>
-                {actionType === 'reject' ? <AlertCircle className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />}
+                {actionType === 'reject' ? <AlertCircle className="w-5 h-5" /> : (actionType === 'complete' ? <CheckCircle2 className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />)}
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 text-base">
-                  {actionType === 'reject' ? 'Tolak Laporan Masuk' : 'Verifikasi & Terima Laporan'}
+                  {actionType === 'reject' ? 'Tolak Laporan Masuk' : (actionType === 'complete' ? 'Tandai Selesai Laporan' : 'Verifikasi & Terima Laporan')}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {actionType === 'reject'
                     ? 'Laporan akan ditandai Ditolak dan warga akan menerima alasan penolakan.'
-                    : 'Laporan telah diverifikasi keabsahannya dan akan diteruskan ke tim dinas.'}
+                    : (actionType === 'complete'
+                        ? 'Laporan akan ditandai Selesai dan warga akan menerima pesan penyelesaian.'
+                        : 'Laporan telah diverifikasi keabsahannya dan akan diteruskan ke tim dinas.')}
                 </p>
               </div>
             </div>
@@ -730,6 +742,22 @@ function TriageReportsPage() {
               </div>
             )}
 
+            {actionType === 'complete' && isAdminKabupaten && (
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Pesan Penyelesaian (Wajib Diisi)
+                </label>
+                <textarea
+                  rows={3}
+                  value={completeMessage}
+                  onChange={(e) => setCompleteMessage(e.target.value)}
+                  placeholder="Tulis pesan untuk warga terkait penyelesaian laporan ini..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none resize-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                  autoFocus
+                />
+              </div>
+            )}
+
             <div className="flex gap-2.5 pt-2">
               <button
                 onClick={closeAction}
@@ -740,12 +768,12 @@ function TriageReportsPage() {
               </button>
               <button
                 onClick={confirmAction}
-                disabled={submitting || (actionType === 'reject' && !rejectReason.trim())}
+                disabled={submitting || (actionType === 'reject' && !rejectReason.trim()) || (actionType === 'complete' && isAdminKabupaten && !completeMessage.trim())}
                 className={`flex-1 py-2.5 text-white rounded-xl text-xs font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  actionType === 'reject' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                  actionType === 'reject' ? 'bg-rose-600 hover:bg-rose-700' : (actionType === 'complete' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700')
                 }`}
               >
-                {submitting ? 'Menyimpan...' : (actionType === 'reject' ? 'Konfirmasi Tolak' : 'Konfirmasi Terima')}
+                {submitting ? 'Menyimpan...' : (actionType === 'reject' ? 'Konfirmasi Tolak' : (actionType === 'complete' ? 'Konfirmasi Selesai' : 'Konfirmasi Terima'))}
               </button>
             </div>
           </div>

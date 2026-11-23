@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import SplashScreen from './components/ui/SplashScreen';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import FormStepPage from './pages/report/FormStepPage';
 import PreviewStepPage from './pages/report/PreviewStepPage';
@@ -17,18 +18,44 @@ import TriageReportsPage from './pages/TriageReportsPage';
 import GISMapViewPage from './pages/GISMapViewPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import SettingsPage from './pages/SettingsPage';
-import LandingPage from './pages/LandingPage';
 import ProtectedRoute from './routes/ProtectedRoute';
 import PublicRoute from './routes/PublicRoute';
-import { ROLE } from './stores/useAuthStore';
+import { ROLE, useAuthStore } from './stores/useAuthStore';
 
 const { USER, ADMIN_KECAMATAN, ADMIN_KABUPATEN } = ROLE;
 
-function App() {
+// Root redirect component - handles initial auth-based routing
+function RootRedirect() {
+  const { user, loading } = useAuthStore();
+  
+  if (loading) return null;
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return <Navigate to="/home" replace />;
+}
+
+// Global safety fallback - force hide splash after 18 seconds max (after auth store 15s timeout)
+function AppInner() {
+  const [splashVisible, setSplashVisible] = useState(true);
+  
+  useEffect(() => {
+    // Safety: force hide splash after 18 seconds max
+    const timer = setTimeout(() => {
+      console.log('[App] Force hiding splash after 18s timeout');
+      setSplashVisible(false);
+    }, 18000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div>
-      <SplashScreen duration={3000} />
-      <Toaster
+    <ErrorBoundary>
+      <div>
+        {splashVisible && <SplashScreen duration={1500} />}
+        <Toaster
         position="top-center"
         toastOptions={{
           duration: 3000,
@@ -54,7 +81,12 @@ function App() {
         }}
       />
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/" element={<RootRedirect />} />
+        <Route path="/home" element={
+          <ProtectedRoute roles={[USER]}>
+            <HomePage />
+          </ProtectedRoute>
+        } />
         <Route path="/login" element={
           <PublicRoute>
             <LoginPage />
@@ -157,7 +189,16 @@ function App() {
           </ProtectedRoute>
         } />
       </Routes>
-    </div>
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppInner />
+    </Router>
   );
 }
 

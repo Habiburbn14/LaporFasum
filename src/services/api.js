@@ -56,7 +56,7 @@ export const laporanAPI = {
     api.post('/laporan', data),
   list: (filters, config) => api.get('/laporan', { ...config, params: filters }),
   getById: (id) => api.get(`/laporan/${id}`),
-  updateStatus: (id, status, tanggapan, kewenangan) => {
+  updateStatus: (id, status, tanggapan, kewenangan, pesan) => {
     const formData = new FormData();
     formData.append('id_laporan', id);
     formData.append('status_terkini', status);
@@ -65,6 +65,9 @@ export const laporanAPI = {
     }
     if (kewenangan !== undefined && kewenangan !== null && kewenangan !== '') {
       formData.append('kewenangan_penanganan', kewenangan);
+    }
+    if (pesan !== undefined && pesan !== null && pesan !== '') {
+      formData.append('pesan', pesan);
     }
     return api.put(`/laporan/${id}/status`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
@@ -92,7 +95,7 @@ export const adminAPI = {
       'Expires': '0',
     }
   }),
-  updateStatus: (id, status, tanggapan, kewenangan) => {
+  updateStatus: (id, status, tanggapan, kewenangan, pesan) => {
     const formData = new FormData();
     formData.append('id_laporan', id);
     formData.append('status_terkini', status);
@@ -101,6 +104,9 @@ export const adminAPI = {
     }
     if (kewenangan !== undefined && kewenangan !== null && kewenangan !== '') {
       formData.append('kewenangan_penanganan', kewenangan);
+    }
+    if (pesan !== undefined && pesan !== null && pesan !== '') {
+      formData.append('pesan', pesan);
     }
     return api.put(`/admin/laporan/${id}/status`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }

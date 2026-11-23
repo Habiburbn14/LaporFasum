@@ -9,6 +9,7 @@ import Logoapk from '../assets/Logoapk.svg';
 import BottomNav from '../components/mobile/BottomNav';
 import WeeklyChart from '../components/mobile/WeeklyChart';
 import { userAPI } from '../services/api';
+import NotificationPopupUser from '../components/ui/NotificationPopupUser';
 
 // Pemetaan 6 Kategori Teratas
 const TOP_CATEGORIES = [
@@ -205,18 +206,13 @@ function HomePage() {
   const [weeklyChartData, setWeeklyChartData] = useState([]);
   const [monthlyChartData, setMonthlyChartData] = useState([]);
   const [recentReports, setRecentReports] = useState([]);
-  const [notifications, setNotifications] = useState([]);
   const navigate = useNavigate();
 
   const fetchData = async () => {
     try {
-      const [dashboardRes, notificationsRes] = await Promise.all([
-        userAPI.getDashboard(),
-        userAPI.getNotifications()
-      ]);
+      const dashboardRes = await userAPI.getDashboard();
 
       const dashboardData = dashboardRes.data?.data || dashboardRes.data;
-      const notificationsData = notificationsRes.data?.data || notificationsRes.data;
 
       // Mapping manual untuk statistik wilayah dari JSON backend
       const rawStats = dashboardData.statistik_wilayah || {};
@@ -235,7 +231,6 @@ function HomePage() {
       const weeklyData = transformChartData(weeklyRawData, 'weekly');
       setMonthlyChartData(fillWeeksOfMonth(weeklyData));
       setRecentReports(dashboardData.laporan_terbaru || []);
-      setNotifications(notificationsData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     }
@@ -257,12 +252,7 @@ function HomePage() {
             <img src={Logoapk} alt="Logo" className="w-9 h-9 rounded-xl shadow-xs" />
             <span className="text-white font-semibold text-lg tracking-tight">LaporFasum</span>
           </div>
-          <button className="relative w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">
-            <Bell className="w-4.5 h-4.5 text-white" size={18} />
-            {notifications.length > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-400 rounded-full ring-2 ring-blue-600" />
-            )}
-          </button>
+          <NotificationPopupUser />
         </div>
 
         <div className="relative">
