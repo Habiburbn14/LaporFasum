@@ -127,6 +127,7 @@ export const masterAPI = {
   }),
   getFasilitasUmum: (params = {}) => api.get('/master/fasilitas-umum', { params }),
   getFasilitasUmumByKategori: (idKategori, params = {}) => api.get(`/master/fasilitas-umum/${idKategori}`, { params }),
+  getRekomendasiFasilitas: (latitude, longitude) => api.get('/master/rekomendasi-fasilitas', { params: { latitude, longitude } }),
 };
 
 export const gisAPI = {

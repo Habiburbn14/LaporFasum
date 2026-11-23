@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Clock, MapPin, Loader2, Send, CheckCircle } from 'lucide-react';
+import { Clock, MapPin, Loader2, Send, CheckCircle, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getErrorMessage } from '../../utils/error';
 import { uriToFile } from '../../services/capacitor';
@@ -52,6 +52,9 @@ export default function PreviewStepPage() {
       if (locationData?.kecamatan?.id_kecamatan) {
         formDataObj.append('id_kecamatan_kejadian', String(locationData.kecamatan.id_kecamatan));
       }
+      if (formData?.id_fasilitas_umum) {
+        formDataObj.append('id_fasilitas_umum', String(formData.id_fasilitas_umum));
+      }
       formDataObj.append('foto_bukti', file);
 
       const data = await uploadLaporan(formDataObj);
@@ -91,7 +94,7 @@ export default function PreviewStepPage() {
       </div>
 
       <div className="p-4">
-        <img src={photoUrl} alt="Preview" className="w-full h-52 object-cover rounded-xl shadow-sm" loading="lazy" />
+        <img src={photoUrl} alt="Preview" className="w-full h-auto max-h-[60vh] object-contain rounded-xl shadow-sm" loading="lazy" />
       </div>
 
       <div className="px-4 space-y-4 pb-8">
@@ -135,6 +138,14 @@ export default function PreviewStepPage() {
             <div className="pt-3 border-t border-slate-100">
               <label className="text-[10px] uppercase font-bold text-slate-400">Kecamatan</label>
               <p className="text-sm font-bold text-blue-600 mt-1">{locationData.kecamatan.nama_kecamatan}</p>
+            </div>
+          )}
+          {formData?.id_fasilitas_umum && formData?.nama_fasilitas && (
+            <div className="pt-3 border-t border-slate-100">
+              <label className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                <Building2 className="w-3 h-3" /> Fasilitas Umum
+              </label>
+              <p className="text-sm font-medium text-slate-800 mt-1">{formData.nama_fasilitas}</p>
             </div>
           )}
         </div>

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Send, ChevronDown, RefreshCw } from 'lucide-react';
+import { ArrowLeft, MapPin, Send, ChevronDown, RefreshCw, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCurrentLocation } from '../../services/capacitor';
 import { findKecamatanByCoords } from '../../utils/kecamatan';
+import { masterAPI } from '../../services/api';
 
 const KECAMATAN_LIST = [
   'Sukorame', 'Bluluk', 'Modo', 'Ngimbang', 'Babat', 'Kedungpring',
@@ -52,6 +53,52 @@ export default function FormStepPage() {
 
   const [showKecamatanPicker, setShowKecamatanPicker] = useState(false);
   const [manualKecamatan, setManualKecamatan] = useState(locationData?.kecamatan?.nama_kecamatan || '');
+  const [fasilitasRekomendasi, setFasilitasRekomendasi] = useState([]);
+  const [selectedFasilitas, setSelectedFasilitas] = useState(null);
+  const [loadingFasilitas, setLoadingFasilitas] = useState(false);
+
+  // Fetch rekomendasi fasilitas when location is available
+  useEffect(() => {
+    if (locationData?.latitude && locationData?.longitude) {
+      const fetchRekomendasi = async () => {
+        setLoadingFasilitas(true);
+        setFasilitasRekomendasi([]);
+        try {
+          const res = await masterAPI.getRekomendasiFasilitas(locationData.latitude, locationData.longitude);
+          console.log('Rekomendasi API Response:', res);
+          // Handle different response structures
+          let rekomendasi = [];
+          if (res.data?.rekomendasi) {
+            rekomendasi = res.data.rekomendasi;
+          } else if (res.data?.data) {
+            rekomendasi = res.data.data;
+          } else if (Array.isArray(res.data)) {
+            rekomendasi = res.data;
+          } else if (Array.isArray(res)) {
+            rekomendasi = res;
+          }
+          if (rekomendasi.length > 0) {
+            setFasilitasRekomendasi(rekomendasi);
+          }
+        } catch (err) {
+          console.error('Gagal memuat rekomendasi fasilitas:', err);
+          setFasilitasRekomendasi([]);
+        } finally {
+          setLoadingFasilitas(false);
+        }
+      };
+      fetchRekomendasi();
+    }
+  }, [locationData?.latitude, locationData?.longitude]);
+
+  const handleFasilitasSelect = (fasilitas) => {
+    try {
+      setSelectedFasilitas(fasilitas);
+      setFormData(prev => ({ ...prev, id_fasilitas_umum: fasilitas.id_fasilitas, nama_fasilitas: fasilitas.nama_fasilitas }));
+    } catch (err) {
+      console.error('Error selecting fasilitas:', err);
+    }
+  };
 
   const handleKecamatanSelect = (kecamatan) => {
     setManualKecamatan(kecamatan);
@@ -161,6 +208,51 @@ export default function FormStepPage() {
             </p>
           )}
         </div>
+
+        {/* Rekomendasi Fasilitas Terdekat */}
+        {(fasilitasRekomendasi.length > 0 || loadingFasilitas) && (
+          <div className="space-y-3">
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 block flex items-center justify-between">
+              Fasilitas Terdekat (500m)
+              <span className="text-[10px] text-emerald-600 font-normal">Opsional - Pilih jika relevan</span>
+            </label>
+            {loadingFasilitas ? (
+              <div className="flex items-center justify-center py-4">
+                <div className="w-6 h-6 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+              </div>
+            ) : (Array.isArray(fasilitasRekomendasi) && fasilitasRekomendasi.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {fasilitasRekomendasi.map((item) => {
+                  const fas = item;
+                  return (
+                    <button
+                      key={fas.id_fasilitas}
+                      type="button"
+                      onClick={() => handleFasilitasSelect(fas)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all text-sm font-medium ${
+                        selectedFasilitas?.id_fasilitas === fas.id_fasilitas
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-700 shadow-sm'
+                          : 'bg-white border-slate-200 text-slate-700 hover:bg-emerald-50 hover:border-emerald-200'
+                      }`}
+                    >
+                      <Building2 className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate max-w-[160px]">
+                        {fas.nama_fasilitas}
+                      </span>
+                      <span className="text-[10px] text-emerald-600 font-mono bg-emerald-50 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                        {Math.round(fas.jarak_meter)}m
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-4 text-slate-500 text-sm">
+                Tidak ada fasilitas terdekat ditemukan
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="space-y-4">
           <div>

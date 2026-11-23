@@ -139,12 +139,13 @@ function TriageReportsPage() {
     if (!actionReport) return;
     const isReject = actionType === 'reject';
     const isComplete = actionType === 'complete';
+    const isProcessKecamatan = actionType === 'process_kecamatan';
     if (isReject && !rejectReason.trim()) {
       toast.error('Alasan penolakan wajib diisi');
       return;
     }
-    if (isComplete && isAdminKabupaten && !completeMessage.trim()) {
-      toast.error('Pesan penyelesaian wajib diisi');
+    if ((isComplete || isProcessKecamatan) && !completeMessage.trim()) {
+      toast.error(isProcessKecamatan ? 'Catatan proses kecamatan wajib diisi' : 'Pesan penyelesaian wajib diisi');
       return;
     }
 
@@ -157,6 +158,10 @@ function TriageReportsPage() {
       newStatus = 'Selesai';
       reason = undefined;
       kewenangan = 'Dinas PU';
+    } else if (isProcessKecamatan) {
+      newStatus = 'Diproses Kecamatan';
+      reason = completeMessage.trim();
+      kewenangan = 'Kecamatan';
     } else if (isReject) {
       newStatus = 'Ditolak';
       reason = rejectReason.trim();
@@ -171,6 +176,8 @@ function TriageReportsPage() {
     try {
       if (isComplete && isAdminKabupaten) {
         await adminAPI.updateStatus(id, newStatus, reason, kewenangan, completeMessage);
+      } else if (isProcessKecamatan && isAdminKecamatan) {
+        await laporanAPI.updateStatus(id, newStatus, reason, kewenangan, completeMessage);
       } else {
         await laporanAPI.updateStatus(id, newStatus, reason, kewenangan);
       }
@@ -181,9 +188,11 @@ function TriageReportsPage() {
       ));
       const msg = isComplete
         ? 'Laporan berhasil ditandai Selesai'
-        : isReject
-          ? 'Laporan berhasil ditolak'
-          : 'Laporan berhasil diterima & diverifikasi';
+        : isProcessKecamatan
+          ? 'Laporan berhasil diproses di tingkat kecamatan'
+          : isReject
+            ? 'Laporan berhasil ditolak'
+            : 'Laporan berhasil diterima & diverifikasi';
       toast.success(msg);
       closeAction();
     } catch (err) {
@@ -476,8 +485,7 @@ function TriageReportsPage() {
                       {/* Actions - Visibility based on role */}
                       <td className="py-3.5 px-5 text-right whitespace-nowrap">
                         <div className="inline-flex items-center justify-end gap-1.5">
-                          {/* Admin Kecamatan: Can accept/reject 'Menunggu Verifikasi', see 'Diterima' (no Selesai) */}
-                          {/* Admin Kabupaten: Can mark 'Diterima' as 'Selesai' */}
+                          {/* Admin Kecamatan: Can accept/reject 'Menunggu Verifikasi' */}
                           {(isAdminKecamatan || isAdminKabupaten) && report.status_terkini === 'Menunggu Verifikasi' ? (
                             <>
                               <button
@@ -506,6 +514,28 @@ function TriageReportsPage() {
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Selesai
                             </button>
+                          ) : isAdminKecamatan && report.status_terkini === 'Diterima' ? (
+                            <div className="inline-flex items-center gap-1.5">
+                              {report.kewenangan_penanganan === 'Kecamatan' ? (
+                                <button
+                                  onClick={() => openAction(report, 'complete')}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
+                                  title="Tandai laporan selesai ditangani"
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  Selesai
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => openAction(report, 'process_kecamatan')}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
+                                  title="Proses laporan di tingkat kecamatan"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  Diproses Kecamatan
+                                </button>
+                              )}
+                            </div>
                           ) : null}
 
                           <button 
@@ -684,6 +714,33 @@ function TriageReportsPage() {
                 </button>
               </div>
             )}
+            {selectedReport.status_terkini === 'Diterima' && isAdminKecamatan && (
+              <div className="p-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-end gap-2.5">
+                {selectedReport.kewenangan_penanganan === 'Kecamatan' ? (
+                  <button
+                    onClick={() => {
+                      const r = selectedReport;
+                      setSelectedReport(null);
+                      openAction(r, 'complete');
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm transition-colors"
+                  >
+                    Selesai
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      const r = selectedReport;
+                      setSelectedReport(null);
+                      openAction(r, 'process_kecamatan');
+                    }}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors"
+                  >
+                    Diproses Kecamatan
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -700,20 +757,22 @@ function TriageReportsPage() {
           >
             <div className="flex items-start gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                actionType === 'reject' ? 'bg-rose-100 text-rose-600' : (actionType === 'complete' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600')
+                actionType === 'reject' ? 'bg-rose-100 text-rose-600' : (actionType === 'complete' ? 'bg-blue-100 text-blue-600' : (actionType === 'process_kecamatan' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'))
               }`}>
-                {actionType === 'reject' ? <AlertCircle className="w-5 h-5" /> : (actionType === 'complete' ? <CheckCircle2 className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />)}
+                {actionType === 'reject' ? <AlertCircle className="w-5 h-5" /> : (actionType === 'complete' ? <CheckCircle2 className="w-5 h-5" /> : (actionType === 'process_kecamatan' ? <CheckCircle2 className="w-5 h-5" /> : <ShieldCheck className="w-5 h-5" />))}
               </div>
               <div>
                 <h3 className="font-bold text-slate-900 text-base">
-                  {actionType === 'reject' ? 'Tolak Laporan Masuk' : (actionType === 'complete' ? 'Tandai Selesai Laporan' : 'Verifikasi & Terima Laporan')}
+                  {actionType === 'reject' ? 'Tolak Laporan Masuk' : (actionType === 'complete' ? 'Tandai Selesai Laporan' : (actionType === 'process_kecamatan' ? 'Proses di Tingkat Kecamatan' : 'Verifikasi & Terima Laporan'))}
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
                   {actionType === 'reject'
                     ? 'Laporan akan ditandai Ditolak dan warga akan menerima alasan penolakan.'
                     : (actionType === 'complete'
                         ? 'Laporan akan ditandai Selesai dan warga akan menerima pesan penyelesaian.'
-                        : 'Laporan telah diverifikasi keabsahannya dan akan diteruskan ke tim dinas.')}
+                        : (actionType === 'process_kecamatan'
+                            ? 'Laporan akan diproses di tingkat kecamatan dan warga akan menerima catatan proses.'
+                            : 'Laporan telah diverifikasi keabsahannya dan akan diteruskan ke tim dinas.'))}
                 </p>
               </div>
             </div>
@@ -737,6 +796,22 @@ function TriageReportsPage() {
                   onChange={(e) => setRejectReason(e.target.value)}
                   placeholder="Contoh: Lokasi berada di luar kewenangan Kabupaten Lamongan atau bukti foto buram..."
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none resize-none focus:ring-2 focus:ring-rose-500 focus:bg-white transition-all"
+                  autoFocus
+                />
+              </div>
+            )}
+
+            {actionType === 'process_kecamatan' && (
+              <div>
+                <label className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Catatan Proses Kecamatan (Wajib Diisi)
+                </label>
+                <textarea
+                  rows={3}
+                  value={completeMessage}
+                  onChange={(e) => setCompleteMessage(e.target.value)}
+                  placeholder="Tulis catatan terkait proses pengerjaan di tingkat kecamatan..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 outline-none resize-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   autoFocus
                 />
               </div>
@@ -768,12 +843,12 @@ function TriageReportsPage() {
               </button>
               <button
                 onClick={confirmAction}
-                disabled={submitting || (actionType === 'reject' && !rejectReason.trim()) || (actionType === 'complete' && isAdminKabupaten && !completeMessage.trim())}
+                disabled={submitting || (actionType === 'reject' && !rejectReason.trim()) || ((actionType === 'complete' || actionType === 'process_kecamatan') && !completeMessage.trim())}
                 className={`flex-1 py-2.5 text-white rounded-xl text-xs font-semibold shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  actionType === 'reject' ? 'bg-rose-600 hover:bg-rose-700' : (actionType === 'complete' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700')
+                  actionType === 'reject' ? 'bg-rose-600 hover:bg-rose-700' : (actionType === 'complete' ? 'bg-blue-600 hover:bg-blue-700' : (actionType === 'process_kecamatan' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-emerald-600 hover:bg-emerald-700'))
                 }`}
               >
-                {submitting ? 'Menyimpan...' : (actionType === 'reject' ? 'Konfirmasi Tolak' : (actionType === 'complete' ? 'Konfirmasi Selesai' : 'Konfirmasi Terima'))}
+                {submitting ? 'Menyimpan...' : (actionType === 'reject' ? 'Konfirmasi Tolak' : (actionType === 'complete' ? 'Konfirmasi Selesai' : (actionType === 'process_kecamatan' ? 'Konfirmasi Proses Kecamatan' : 'Konfirmasi Terima')))}
               </button>
             </div>
           </div>

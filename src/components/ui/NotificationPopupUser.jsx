@@ -68,17 +68,14 @@ function NotificationPopupUser() {
     }
   }, []);
 
-  // Fetch once on mount for badge count
   useEffect(() => {
     fetchNotifications(1, false);
   }, [fetchNotifications]);
 
-  // Fetch fresh data when opening
   useEffect(() => {
     if (open) fetchNotifications(1, false);
   }, [open, fetchNotifications]);
 
-  // Close when clicking outside
   useEffect(() => {
     if (!open) return;
     const handleClickOutside = (event) => {
@@ -128,17 +125,17 @@ function NotificationPopupUser() {
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[1200] flex items-end pointer-events-none">
-          {/* Backdrop - only catches clicks directly on it */}
+        <>
+          {/* Backdrop - renders first, lowest z-index */}
           <div 
-            className="absolute inset-0 bg-black/30 pointer-events-auto" 
+            className="fixed inset-0 z-[1199] bg-black/20 pointer-events-auto" 
             onClick={() => setOpen(false)}
             style={{ touchAction: 'none' }}
           />
           
-          {/* Bottom Sheet */}
-          <div className="w-full bg-white rounded-t-2xl shadow-xl border-t border-slate-200 animate-in slide-in-from-bottom-4 duration-300 max-h-[90vh] flex flex-col pointer-events-auto">
-            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+          {/* Bottom Sheet - renders second, highest z-index, fully white */}
+          <div className="fixed bottom-0 left-0 right-0 z-[1200] bg-white rounded-t-2xl shadow-xl border-t border-slate-200 animate-in slide-in-from-bottom-4 duration-300 max-h-[90vh] flex flex-col pointer-events-auto">
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-20">
               <h3 className="text-sm font-bold text-slate-900">Notifikasi</h3>
               {unreadCount > 0 && (
                 <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
@@ -147,73 +144,73 @@ function NotificationPopupUser() {
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
-            {loading && notifications.length === 0 && (
-              <div className="py-8 flex items-center justify-center">
-                <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-              </div>
-            )}
+            <div className="flex-1 overflow-y-auto bg-white" ref={listRef} onScroll={handleScroll}>
+              {loading && notifications.length === 0 && (
+                <div className="py-8 flex items-center justify-center">
+                  <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+                </div>
+              )}
 
-            {!loading && error && (
-              <div className="py-8 px-4 text-center">
-                <p className="text-xs text-red-600">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => fetchNotifications(1, false)}
-                  className="mt-2 text-xs font-medium text-blue-600 hover:underline"
+              {!loading && error && (
+                <div className="py-8 px-4 text-center">
+                  <p className="text-xs text-red-600">{error}</p>
+                  <button
+                    type="button"
+                    onClick={() => fetchNotifications(1, false)}
+                    className="mt-2 text-xs font-medium text-blue-600 hover:underline"
+                  >
+                    Coba lagi
+                  </button>
+                </div>
+              )}
+
+              {!loading && !error && notifications.length === 0 && (
+                <div className="py-8 flex flex-col items-center justify-center text-center px-4">
+                  <BellOff className="w-7 h-7 text-slate-400 mb-2" />
+                  <p className="text-xs text-slate-500">Belum ada notifikasi</p>
+                </div>
+              )}
+
+              {!loading && !error && notifications.map((n, index) => (
+                <div
+                  key={n.id_notifikasi || n.id || index}
+                  className="px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
                 >
-                  Coba lagi
-                </button>
-              </div>
-            )}
-
-            {!loading && !error && notifications.length === 0 && (
-              <div className="py-8 flex flex-col items-center justify-center text-center px-4">
-                <BellOff className="w-7 h-7 text-slate-400 mb-2" />
-                <p className="text-xs text-slate-500">Belum ada notifikasi</p>
-              </div>
-            )}
-
-            {!loading && !error && notifications.map((n, index) => (
-              <div
-                key={n.id_notifikasi || n.id || index}
-                className="px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-start gap-2">
-                  {isUnread(n) && (
-                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">
-                      {notificationTitle(n)}
-                    </p>
-                    {notificationMessage(n) && (
-                      <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">
-                        {notificationMessage(n)}
+                  <div className="flex items-start gap-2">
+                    {isUnread(n) && (
+                      <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {notificationTitle(n)}
                       </p>
-                    )}
-                    {notificationTime(n) && (
-                      <p className="text-[11px] text-slate-500 mt-1">{notificationTime(n)}</p>
-                    )}
+                      {notificationMessage(n) && (
+                        <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">
+                          {notificationMessage(n)}
+                        </p>
+                      )}
+                      {notificationTime(n) && (
+                        <p className="text-[11px] text-slate-500 mt-1">{notificationTime(n)}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {hasMore && !loading && (
-              <div className="px-4 py-3 text-center border-t border-slate-100">
-                <button
-                  onClick={() => setPage(prev => prev + 1)}
-                  className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1"
-                >
-                  <ChevronDown className="w-3 h-3" />
-                  Muat lebih banyak
-                </button>
-              </div>
-            )}
+              {hasMore && !loading && (
+                <div className="px-4 py-3 text-center border-t border-slate-100">
+                  <button
+                    onClick={() => setPage(prev => prev + 1)}
+                    className="text-xs font-medium text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                    Muat lebih banyak
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </>
       )}
     </div>
   );
