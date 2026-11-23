@@ -108,7 +108,7 @@ export const adminAPI = {
     if (pesan !== undefined && pesan !== null && pesan !== '') {
       formData.append('pesan', pesan);
     }
-    return api.put(`/admin/laporan/${id}/status`, formData, {
+    return api.put(`/laporan/${id}/status`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },

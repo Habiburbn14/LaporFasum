@@ -128,17 +128,26 @@ function NotificationPopupUser() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-xl border border-slate-200 z-[1200] overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-900">Notifikasi</h3>
-            {unreadCount > 0 && (
-              <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                {unreadCount} baru
-              </span>
-            )}
-          </div>
+        <div className="fixed inset-0 z-[1200] flex items-end pointer-events-none">
+          {/* Backdrop - only catches clicks directly on it */}
+          <div 
+            className="absolute inset-0 bg-black/30 pointer-events-auto" 
+            onClick={() => setOpen(false)}
+            style={{ touchAction: 'none' }}
+          />
+          
+          {/* Bottom Sheet */}
+          <div className="w-full bg-white rounded-t-2xl shadow-xl border-t border-slate-200 animate-in slide-in-from-bottom-4 duration-300 max-h-[90vh] flex flex-col pointer-events-auto">
+            <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="text-sm font-bold text-slate-900">Notifikasi</h3>
+              {unreadCount > 0 && (
+                <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                  {unreadCount} baru
+                </span>
+              )}
+            </div>
 
-          <div className="max-h-[70vh] min-h-[400px] overflow-y-auto" ref={listRef} onScroll={handleScroll}>
+            <div className="flex-1 overflow-y-auto" ref={listRef} onScroll={handleScroll}>
             {loading && notifications.length === 0 && (
               <div className="py-8 flex items-center justify-center">
                 <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
@@ -147,7 +156,7 @@ function NotificationPopupUser() {
 
             {!loading && error && (
               <div className="py-8 px-4 text-center">
-                <p className="text-xs text-red-500">{error}</p>
+                <p className="text-xs text-red-600">{error}</p>
                 <button
                   type="button"
                   onClick={() => fetchNotifications(1, false)}
@@ -160,31 +169,31 @@ function NotificationPopupUser() {
 
             {!loading && !error && notifications.length === 0 && (
               <div className="py-8 flex flex-col items-center justify-center text-center px-4">
-                <BellOff className="w-7 h-7 text-slate-300 mb-2" />
-                <p className="text-xs text-slate-400">Belum ada notifikasi</p>
+                <BellOff className="w-7 h-7 text-slate-400 mb-2" />
+                <p className="text-xs text-slate-500">Belum ada notifikasi</p>
               </div>
             )}
 
             {!loading && !error && notifications.map((n, index) => (
               <div
                 key={n.id_notifikasi || n.id || index}
-                className="px-4 py-3 border-b border-slate-50 last:border-b-0 hover:bg-slate-50 transition-colors"
+                className="px-4 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors"
               >
                 <div className="flex items-start gap-2">
                   {isUnread(n) && (
                     <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
                   )}
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">
+                    <p className="text-sm font-semibold text-slate-900 truncate">
                       {notificationTitle(n)}
                     </p>
                     {notificationMessage(n) && (
-                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">
+                      <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">
                         {notificationMessage(n)}
                       </p>
                     )}
                     {notificationTime(n) && (
-                      <p className="text-[11px] text-slate-400 mt-1">{notificationTime(n)}</p>
+                      <p className="text-[11px] text-slate-500 mt-1">{notificationTime(n)}</p>
                     )}
                   </div>
                 </div>
@@ -204,6 +213,7 @@ function NotificationPopupUser() {
             )}
           </div>
         </div>
+      </div>
       )}
     </div>
   );
