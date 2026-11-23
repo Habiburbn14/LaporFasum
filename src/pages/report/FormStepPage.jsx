@@ -7,11 +7,11 @@ import { findKecamatanByCoords } from '../../utils/kecamatan';
 import { masterAPI } from '../../services/api';
 
 const KECAMATAN_LIST = [
-  'Sukorame', 'Bluluk', 'Modo', 'Ngimbang', 'Babat', 'Kedungpring',
-  'Brondong', 'Laren', 'Sekaran', 'Maduran', 'Sambeng', 'Sugio',
-  'Pucuk', 'Paciran', 'Solokuro', 'Mantup', 'Sukodadi', 'Karanggeneng',
-  'Kembangbahu', 'Kalitengah', 'Turi', 'Lamongan', 'Tikung',
-  'Karangbinangun', 'Deket', 'Glagah', 'Sarirejo'
+  'Babat', 'Bluluk', 'Brondong', 'Deket', 'Glagah', 'Kalitengah',
+  'Karangbinangun', 'Karanggeneng', 'Kedungpring', 'Kembangbahu', 'Lamongan',
+  'Laren', 'Maduran', 'Mantup', 'Modo', 'Ngimbang', 'Paciran', 'Pucuk',
+  'Sambeng', 'Sarirejo', 'Sekaran', 'Solokuro', 'Sugio', 'Sukodadi',
+  'Sukorame', 'Tikung', 'Turi'
 ];
 
 export default function FormStepPage() {
@@ -101,9 +101,25 @@ export default function FormStepPage() {
   };
 
   const handleKecamatanSelect = (kecamatan) => {
+    const kecObj = KECAMATAN_LIST.find(k => k === kecamatan);
+    const kecamatanId = KECAMATAN_LIST.indexOf(kecamatan) + 1;
+    
     setManualKecamatan(kecamatan);
     setFormData(prev => ({ ...prev, lokasi: `Kec. ${kecamatan}` }));
     setShowKecamatanPicker(false);
+    
+    // Update sessionStorage with selected kecamatan
+    if (locationData) {
+      const newLocationData = {
+        ...locationData,
+        kecamatan: {
+          nama_kecamatan: kecamatan,
+          id_kecamatan: kecamatanId
+        },
+        region: kecamatan
+      };
+      sessionStorage.setItem('report_locationData', JSON.stringify(newLocationData));
+    }
   };
 
   const handleRedetect = async () => {

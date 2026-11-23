@@ -5,13 +5,15 @@ export function toWIB(dateStr) {
   if (!dateStr) return null;
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return null;
-  // If the date string doesn't have timezone info, assume it's already WIB
-  // If it has Z or +00:00, it's UTC - convert to WIB
+  // If the date string has timezone info (Z or offset), 
+  // new Date() already converts to local timezone (WIB).
+  // Only add offset if there's NO timezone info (naive datetime).
   const hasTimezone = /Z|[+-]\d{2}:?\d{2}$/.test(dateStr);
-  if (hasTimezone) {
+  if (!hasTimezone) {
+    // Naive datetime - assume it's UTC, convert to WIB
     return new Date(date.getTime() + WIB_OFFSET);
   }
-  // Already local/WIB
+  // Has timezone (Z or offset) - already converted to local by Date constructor
   return date;
 }
 
