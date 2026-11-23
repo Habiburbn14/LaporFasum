@@ -162,12 +162,17 @@ function RegisterPage() {
 
   const handleNextPhase = (e) => {
     e.preventDefault();
-    if (!validatePhase1()) {
-      toast.error('Mohon lengkapi data diri dengan benar');
-      return;
+    try {
+      if (!validatePhase1()) {
+        toast.error('Mohon lengkapi data diri dengan benar');
+        return;
+      }
+      setPhase(2);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error('Phase 1 validation error:', err);
+      toast.error('Terjadi kesalahan validasi');
     }
-    setPhase(2);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handlePrevPhase = () => {
@@ -208,21 +213,27 @@ function RegisterPage() {
     }
 
     setLoading(true);
-    const result = await registerUser(
-      formData.nama.trim(),
-      formData.nik.trim(),
-      formData.email.trim(),
-      formData.password,
-      formData.alamat_domisili.trim(),
-      parseInt(formData.id_kecamatan)
-    );
-    setLoading(false);
+    try {
+      const result = await registerUser(
+        formData.nama.trim(),
+        formData.nik.trim(),
+        formData.email.trim(),
+        formData.password,
+        formData.alamat_domisili.trim(),
+        parseInt(formData.id_kecamatan)
+      );
+      setLoading(false);
 
-    if (result.success) {
-      toast.success('Pendaftaran Berhasil! Silakan masuk.');
-      navigate('/login');
-    } else {
-      toast.error(result.error || 'Pendaftaran gagal. Silakan coba lagi.');
+      if (result.success) {
+        toast.success(result.message || 'Pendaftaran Berhasil! Silakan masuk.');
+        navigate('/login');
+      } else {
+        toast.error(result.error || 'Pendaftaran gagal. Silakan coba lagi.');
+      }
+    } catch (err) {
+      setLoading(false);
+      console.error('Register submit error:', err);
+      toast.error('Terjadi kesalahan sistem. Silakan coba lagi.');
     }
   };
 

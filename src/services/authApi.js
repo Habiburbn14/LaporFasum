@@ -98,12 +98,14 @@ export const registerUser = async (nama, nik, email, password, alamat_domisili, 
       { headers: jsonHeaders() }
     );
 
+    // Backend may not return token on registration - just success message
     if (response.data.access_token) {
       await persistedAuthStorage.setItem('access_token', response.data.access_token);
-      return { success: true, token: response.data.access_token };
+      return { success: true, token: response.data.access_token, user: response.data.user };
     }
-    return { success: true, token: null };
+    return { success: true, token: null, message: response.data.message || 'Registrasi berhasil' };
   } catch (error) {
+    console.error('Register error:', error);
     let errorMessage = 'Pendaftaran gagal';
     const detail = error.response?.data?.detail;
     if (Array.isArray(detail)) {
@@ -112,6 +114,8 @@ export const registerUser = async (nama, nik, email, password, alamat_domisili, 
       errorMessage = detail.msg || detail.message || JSON.stringify(detail);
     } else if (typeof detail === 'string') {
       errorMessage = detail;
+    } else if (error.message) {
+      errorMessage = error.message;
     }
     return { success: false, error: errorMessage };
   }
