@@ -525,7 +525,7 @@ function TriageReportsPage() {
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   Selesai
                                 </button>
-                              ) : (
+                              ) : (report.kewenangan_penanganan && report.kewenangan_penanganan !== 'Kecamatan' ? (
                                 <button
                                   onClick={() => openAction(report, 'process_kecamatan')}
                                   className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
@@ -534,7 +534,7 @@ function TriageReportsPage() {
                                   <Check className="w-3.5 h-3.5" />
                                   Diproses Kecamatan
                                 </button>
-                              )}
+                              ) : null)}
                             </div>
                           ) : null}
 
@@ -727,7 +727,7 @@ function TriageReportsPage() {
                   >
                     Selesai
                   </button>
-                ) : (
+                ) : (selectedReport.kewenangan_penanganan && selectedReport.kewenangan_penanganan !== 'Kecamatan' ? (
                   <button
                     onClick={() => {
                       const r = selectedReport;
@@ -738,7 +738,7 @@ function TriageReportsPage() {
                   >
                     Diproses Kecamatan
                   </button>
-                )}
+                ) : null)}
               </div>
             )}
           </div>
