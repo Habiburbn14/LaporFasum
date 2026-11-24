@@ -207,7 +207,7 @@ function LoginPage() {
                 <User className="w-4.5 h-4.5" />
               </span>
               <input
-                type="text"
+                type="email"
                 required
                 placeholder="Contoh: 3524... atau nama@email.com"
                 className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-medium text-slate-800 placeholder-slate-400 outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"

@@ -159,7 +159,7 @@ function TriageReportsPage() {
     if (isComplete || isCompleteKecamatan) {
       newStatus = 'Selesai';
       reason = isCompleteKecamatan ? completeMessage.trim() : undefined;
-      kewenangan = isCompleteKecamatan ? 'Kecamatan' : 'Dinas PU';
+      kewenangan = isCompleteKecamatan ? 'Kecamatan' : 'Kabupaten';
     } else if (isProcessKecamatan) {
       newStatus = 'Diproses Kecamatan';
       reason = completeMessage.trim();
@@ -167,7 +167,7 @@ function TriageReportsPage() {
     } else if (isReject) {
       newStatus = 'Ditolak';
       reason = rejectReason.trim();
-      kewenangan = 'Dinas PU';
+      kewenangan = 'Kabupaten';
     } else {
       newStatus = 'Diterima';
       reason = undefined;
