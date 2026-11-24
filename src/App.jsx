@@ -37,16 +37,16 @@ function RootRedirect() {
   return <Navigate to="/home" replace />;
 }
 
-// Global safety fallback - force hide splash after 18 seconds max (after auth store 15s timeout)
+// Global safety fallback - force hide splash after 12 seconds max (matching SplashScreen maxDuration)
 function AppInner() {
   const [splashVisible, setSplashVisible] = useState(true);
   
   useEffect(() => {
-    // Safety: force hide splash after 18 seconds max
+    // Safety: force hide splash after 12 seconds max
     const timer = setTimeout(() => {
-      console.log('[App] Force hiding splash after 18s timeout');
+      console.log('[App] Force hiding splash after 12s timeout');
       setSplashVisible(false);
-    }, 18000);
+    }, 12000);
     
     return () => clearTimeout(timer);
   }, []);
@@ -54,7 +54,7 @@ function AppInner() {
   return (
     <ErrorBoundary>
       <div>
-        {splashVisible && <SplashScreen duration={1500} />}
+        {splashVisible && <SplashScreen minDuration={1500} maxDuration={10000} />}
         <Toaster
         position="top-center"
         toastOptions={{

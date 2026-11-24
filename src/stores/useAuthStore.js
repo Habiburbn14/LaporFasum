@@ -40,12 +40,23 @@ export const useAuthStore = create(
           return;
         }
         try {
+          // Add timeout to axios request
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+          
           const res = await axios.get(`${baseUrl}/auth/me`, {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${get().token}` },
+            signal: controller.signal
           });
+          
+          clearTimeout(timeoutId);
           set({ user: res.data, loading: false });
         } catch (error) {
-          console.error('Token kadaluarsa atau tidak valid:', error);
+          if (error.name === 'AbortError' || error.name === 'CanceledError') {
+            console.warn('[AuthStore] fetchUser timeout (8s)');
+          } else {
+            console.error('Token kadaluarsa atau tidak valid:', error);
+          }
           get().logout();
         }
       },
@@ -94,13 +105,13 @@ export const useAuthStore = create(
         if (state && state.token) {
           console.log('[AuthStore] Token found, fetching user...');
           let completed = false;
-          // Match axios timeout (15s) - let axios handle the timeout
+          // Shorter timeout - 10s instead of 15s
           const timeout = setTimeout(() => {
             if (!completed) {
-              console.warn('fetchUser timeout (15s), forcing loading=false');
+              console.warn('[AuthStore] fetchUser timeout (10s), forcing loading=false');
               useAuthStore.setState({ loading: false });
             }
-          }, 15000);
+          }, 10000);
           
           state.fetchUser().finally(() => {
             completed = true;
