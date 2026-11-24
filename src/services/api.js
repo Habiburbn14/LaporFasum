@@ -69,9 +69,7 @@ export const laporanAPI = {
     if (pesan !== undefined && pesan !== null && pesan !== '') {
       formData.append('pesan', pesan);
     }
-    return api.put(`/laporan/${id}/status`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.put(`/laporan/${id}/status`, formData);
   },
 };
 
@@ -108,9 +106,7 @@ export const adminAPI = {
     if (pesan !== undefined && pesan !== null && pesan !== '') {
       formData.append('pesan', pesan);
     }
-    return api.put(`/laporan/${id}/status`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    return api.put(`/laporan/${id}/status`, formData);
   },
 };
 
