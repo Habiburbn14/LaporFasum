@@ -1,37 +1,44 @@
+// CSV order matches DB IDs (1-27)
 const KECAMATAN_LIST = [
-  { id_kecamatan: 1, nama_kecamatan: 'Sukorame' },
+  { id_kecamatan: 1, nama_kecamatan: 'Babat' },
   { id_kecamatan: 2, nama_kecamatan: 'Bluluk' },
-  { id_kecamatan: 3, nama_kecamatan: 'Modo' },
-  { id_kecamatan: 4, nama_kecamatan: 'Ngimbang' },
-  { id_kecamatan: 5, nama_kecamatan: 'Babat' },
-  { id_kecamatan: 6, nama_kecamatan: 'Kedungpring' },
-  { id_kecamatan: 7, nama_kecamatan: 'Brondong' },
-  { id_kecamatan: 8, nama_kecamatan: 'Laren' },
-  { id_kecamatan: 9, nama_kecamatan: 'Sekaran' },
-  { id_kecamatan: 10, nama_kecamatan: 'Maduran' },
-  { id_kecamatan: 11, nama_kecamatan: 'Sambeng' },
-  { id_kecamatan: 12, nama_kecamatan: 'Sugio' },
-  { id_kecamatan: 13, nama_kecamatan: 'Pucuk' },
-  { id_kecamatan: 14, nama_kecamatan: 'Paciran' },
-  { id_kecamatan: 15, nama_kecamatan: 'Solokuro' },
-  { id_kecamatan: 16, nama_kecamatan: 'Mantup' },
-  { id_kecamatan: 17, nama_kecamatan: 'Sukodadi' },
-  { id_kecamatan: 18, nama_kecamatan: 'Karanggeneng' },
-  { id_kecamatan: 19, nama_kecamatan: 'Kembangbahu' },
-  { id_kecamatan: 20, nama_kecamatan: 'Kalitengah' },
-  { id_kecamatan: 21, nama_kecamatan: 'Turi' },
-  { id_kecamatan: 22, nama_kecamatan: 'Lamongan' },
-  { id_kecamatan: 23, nama_kecamatan: 'Tikung' },
-  { id_kecamatan: 24, nama_kecamatan: 'Karangbinangun' },
-  { id_kecamatan: 25, nama_kecamatan: 'Deket' },
-  { id_kecamatan: 26, nama_kecamatan: 'Glagah' },
-  { id_kecamatan: 27, nama_kecamatan: 'Sarirejo' },
+  { id_kecamatan: 3, nama_kecamatan: 'Brondong' },
+  { id_kecamatan: 4, nama_kecamatan: 'Deket' },
+  { id_kecamatan: 5, nama_kecamatan: 'Glagah' },
+  { id_kecamatan: 6, nama_kecamatan: 'Kalitengah' },
+  { id_kecamatan: 7, nama_kecamatan: 'Karangbinangun' },
+  { id_kecamatan: 8, nama_kecamatan: 'Karanggeneng' },
+  { id_kecamatan: 9, nama_kecamatan: 'Kedungpring' },
+  { id_kecamatan: 10, nama_kecamatan: 'Kembangbahu' },
+  { id_kecamatan: 11, nama_kecamatan: 'Lamongan' },
+  { id_kecamatan: 12, nama_kecamatan: 'Laren' },
+  { id_kecamatan: 13, nama_kecamatan: 'Maduran' },
+  { id_kecamatan: 14, nama_kecamatan: 'Mantup' },
+  { id_kecamatan: 15, nama_kecamatan: 'Modo' },
+  { id_kecamatan: 16, nama_kecamatan: 'Ngimbang' },
+  { id_kecamatan: 17, nama_kecamatan: 'Paciran' },
+  { id_kecamatan: 18, nama_kecamatan: 'Pucuk' },
+  { id_kecamatan: 19, nama_kecamatan: 'Sambeng' },
+  { id_kecamatan: 20, nama_kecamatan: 'Sarirejo' },
+  { id_kecamatan: 21, nama_kecamatan: 'Sekaran' },
+  { id_kecamatan: 22, nama_kecamatan: 'Solokuro' },
+  { id_kecamatan: 23, nama_kecamatan: 'Sugio' },
+  { id_kecamatan: 23, nama_kecamatan: 'Sukodadi' },
+  { id_kecamatan: 25, nama_kecamatan: 'Sukorame' },
+  { id_kecamatan: 26, nama_kecamatan: 'Tikung' },
+  { id_kecamatan: 27, nama_kecamatan: 'Turi' },
 ];
 
+// Map for case-insensitive ID lookup (matches DB IDs)
 const KECAMATAN_BY_NAME = KECAMATAN_LIST.reduce((acc, item) => {
   acc[item.nama_kecamatan.toLowerCase()] = item;
   return acc;
 }, {});
+
+// Map for ID lookup by name (for GeoJSON fallback)
+const KECAMATAN_ID_BY_NAME = Object.fromEntries(
+  KECAMATAN_LIST.map(item => [item.nama_kecamatan.toLowerCase(), item.id_kecamatan])
+);
 
 let geojsonCache = null;
 let centroidCache = null;
@@ -125,13 +132,17 @@ export async function findKecamatanByCoords(lat, lng) {
 
       for (const polygon of polygons) {
         if (pointInPolygon(lng, lat, polygon)) {
-          console.log('[findKecamatanByCoords] Found via polygon:', properties.nama_kecamatan);
+          const nama = properties.nama_kecamatan;
+          console.log('[findKecamatanByCoords] Found via polygon:', nama);
+          
+          // Always use our CSV-based ID mapping (matches DB)
+          const id_kecamatan = KECAMATAN_ID_BY_NAME[nama.toLowerCase()] 
+            || KECAMATAN_LIST.find(k => k.nama_kecamatan.toLowerCase() === nama.toLowerCase())?.id_kecamatan
+            || null;
+          
           return {
-            id_kecamatan:
-              getKecamatanIdFromKode(properties.kode) ||
-              getKecamatanByName(properties.nama_kecamatan)?.id_kecamatan ||
-              null,
-            nama_kecamatan: properties.nama_kecamatan,
+            id_kecamatan,
+            nama_kecamatan: nama,
             match: 'polygon',
           };
         }
@@ -157,12 +168,13 @@ export async function findKecamatanByCoords(lat, lng) {
       console.log('[findKecamatanByCoords] Nearest centroid:', nearest.nama_kecamatan, 'dist:', minDist.toFixed(2), 'km');
       if (minDist <= MAX_NEAREST_DISTANCE_KM) {
         console.log('[findKecamatanByCoords] Using nearest centroid (within threshold)');
+        const nama = nearest.nama_kecamatan;
+        const id_kecamatan = KECAMATAN_ID_BY_NAME[nama.toLowerCase()] 
+          || KECAMATAN_LIST.find(k => k.nama_kecamatan.toLowerCase() === nama.toLowerCase())?.id_kecamatan
+          || null;
         return {
-          id_kecamatan:
-            getKecamatanIdFromKode(nearest.kode) ||
-            getKecamatanByName(nearest.nama_kecamatan)?.id_kecamatan ||
-            null,
-          nama_kecamatan: nearest.nama_kecamatan,
+          id_kecamatan,
+          nama_kecamatan: nama,
           match: 'nearest',
         };
       } else {

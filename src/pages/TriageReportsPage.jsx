@@ -94,8 +94,8 @@ function TriageReportsPage() {
       );
     }
     if (isAdminKabupaten) {
-      // Admin kabupaten: only 'Diterima' reports (evaluated by kecamatan)
-      return reports.filter(r => r.status_terkini === 'Diterima');
+      // Admin kabupaten: 'Diterima' reports (evaluated by kecamatan) and 'Selesai' (completed)
+      return reports.filter(r => r.status_terkini === 'Diterima' || r.status_terkini === 'Selesai');
     }
     return reports;
   };
@@ -514,6 +514,11 @@ function TriageReportsPage() {
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               Selesai
                             </button>
+                          ) : isAdminKabupaten && report.status_terkini === 'Selesai' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              Selesai
+                            </span>
                           ) : isAdminKecamatan && report.status_terkini === 'Diterima' ? (
                             <div className="inline-flex items-center gap-1.5">
                               {report.kewenangan_penanganan === 'Kecamatan' ? (

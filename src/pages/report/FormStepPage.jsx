@@ -6,6 +6,7 @@ import { getCurrentLocation } from '../../services/capacitor';
 import { findKecamatanByCoords } from '../../utils/kecamatan';
 import { masterAPI } from '../../services/api';
 
+// CSV order matches DB IDs (1-27)
 const KECAMATAN_LIST = [
   'Babat', 'Bluluk', 'Brondong', 'Deket', 'Glagah', 'Kalitengah',
   'Karangbinangun', 'Karanggeneng', 'Kedungpring', 'Kembangbahu', 'Lamongan',
@@ -13,6 +14,11 @@ const KECAMATAN_LIST = [
   'Sambeng', 'Sarirejo', 'Sekaran', 'Solokuro', 'Sugio', 'Sukodadi',
   'Sukorame', 'Tikung', 'Turi'
 ];
+
+// Map for ID lookup by name (handles case differences)
+const KECAMATAN_ID_MAP = Object.fromEntries(
+  KECAMATAN_LIST.map((name, i) => [name.toLowerCase(), i + 1])
+);
 
 export default function FormStepPage() {
   const navigate = useNavigate();
@@ -101,8 +107,10 @@ export default function FormStepPage() {
   };
 
   const handleKecamatanSelect = (kecamatan) => {
-    const kecObj = KECAMATAN_LIST.find(k => k === kecamatan);
-    const kecamatanId = KECAMATAN_LIST.indexOf(kecamatan) + 1;
+    // Use case-insensitive lookup for ID
+    const kecamatanId = KECAMATAN_ID_MAP[kecamatan.toLowerCase()] || KECAMATAN_LIST.indexOf(kecamatan) + 1;
+    
+    console.log('[Select Kecamatan]', kecamatan, 'ID:', kecamatanId);
     
     setManualKecamatan(kecamatan);
     setFormData(prev => ({ ...prev, lokasi: `Kec. ${kecamatan}` }));
@@ -119,6 +127,7 @@ export default function FormStepPage() {
         region: kecamatan
       };
       sessionStorage.setItem('report_locationData', JSON.stringify(newLocationData));
+      console.log('[Select Kecamatan] Saved to sessionStorage:', newLocationData);
     }
   };
 
@@ -129,18 +138,29 @@ export default function FormStepPage() {
       if (pos) {
         const kecamatan = await findKecamatanByCoords(pos.coords.latitude, pos.coords.longitude);
         if (kecamatan) {
-          setManualKecamatan(kecamatan.nama_kecamatan);
-          setFormData(prev => ({ ...prev, lokasi: `Kec. ${kecamatan.nama_kecamatan}` }));
-          // Update sessionStorage
+          // Get ID using case-insensitive map
+          const kecamatanName = kecamatan.nama_kecamatan || kecamatan.name || '';
+          const kecamatanId = KECAMATAN_ID_MAP[kecamatanName.toLowerCase()] 
+            || KECAMATAN_LIST.indexOf(kecamatanName) + 1;
+          
+          console.log('[Redetect] Detected kecamatan:', kecamatanName, 'ID:', kecamatanId);
+          
+          setManualKecamatan(kecamatanName);
+          setFormData(prev => ({ ...prev, lokasi: `Kec. ${kecamatanName}` }));
+          
+          // Update sessionStorage with proper ID
           const newLocationData = {
             ...locationData,
             latitude: pos.coords.latitude,
             longitude: pos.coords.longitude,
-            kecamatan,
-            region: kecamatan.nama_kecamatan
+            kecamatan: {
+              nama_kecamatan: kecamatanName,
+              id_kecamatan: kecamatanId
+            },
+            region: kecamatanName
           };
           sessionStorage.setItem('report_locationData', JSON.stringify(newLocationData));
-          toast.success(`Lokasi diperbarui: ${kecamatan.nama_kecamatan}`, { id: 'redetect-gps' });
+          toast.success(`Lokasi diperbarui: ${kecamatanName}`, { id: 'redetect-gps' });
         } else {
           toast.error('Tidak dapat mendeteksi kecamatan', { id: 'redetect-gps' });
         }
@@ -148,6 +168,7 @@ export default function FormStepPage() {
         toast.error('GPS gagal', { id: 'redetect-gps' });
       }
     } catch (e) {
+      console.error('[Redetect] Error:', e);
       toast.error('Gagal mendeteksi lokasi', { id: 'redetect-gps' });
     }
   };

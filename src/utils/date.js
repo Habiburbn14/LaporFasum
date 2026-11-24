@@ -5,15 +5,33 @@ export function toWIB(dateStr) {
   if (!dateStr) return null;
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) return null;
-  // If the date string has timezone info (Z or offset), 
-  // new Date() already converts to local timezone (WIB).
-  // Only add offset if there's NO timezone info (naive datetime).
-  const hasTimezone = /Z|[+-]\d{2}:?\d{2}$/.test(dateStr);
-  if (!hasTimezone) {
-    // Naive datetime - assume it's UTC, convert to WIB
+  
+  // Check if the date string explicitly indicates UTC (Z suffix)
+  const isUtc = /Z$/.test(dateStr);
+  
+  // Check for explicit offset like +00:00, +07:00, etc.
+  const hasOffset = /[+-]\d{2}:?\d{2}$/.test(dateStr);
+  
+  if (isUtc || hasOffset) {
+    // Has explicit timezone (Z or offset) - Date constructor handled conversion to local (WIB)
+    return date;
+  }
+  
+  // No timezone indicator - check if the time appears to be in UTC
+  // If the time is exactly on the hour (e.g., 02:00:00), it's likely UTC
+  // WIB times would typically not be exactly on UTC hour boundaries
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const seconds = date.getSeconds();
+  
+  // If time is exactly on UTC hour boundary (00:00:00, 01:00:00, etc.) 
+  // and it's not midnight WIB, likely it's UTC
+  if (minutes === 0 && seconds === 0 && hours !== 0 && hours !== 7) {
+    // Likely UTC time - convert to WIB
     return new Date(date.getTime() + WIB_OFFSET);
   }
-  // Has timezone (Z or offset) - already converted to local by Date constructor
+  
+  // No timezone indicator - assume backend already sends WIB
   return date;
 }
 

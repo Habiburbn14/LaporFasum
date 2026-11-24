@@ -49,8 +49,15 @@ export default function PreviewStepPage() {
       formDataObj.append('deskripsi', formData?.deskripsi || '');
       formDataObj.append('latitude', String(locationData?.latitude ?? gpsCoords.lat));
       formDataObj.append('longitude', String(locationData?.longitude ?? gpsCoords.lng));
+      
+      // Debug: log what we're sending
+      console.log('[PreviewSubmit] locationData:', locationData);
+      console.log('[PreviewSubmit] formData:', formData);
+      
       if (locationData?.kecamatan?.id_kecamatan) {
-        formDataObj.append('id_kecamatan_kejadian', String(locationData.kecamatan.id_kecamatan));
+        const kecId = String(locationData.kecamatan.id_kecamatan);
+        console.log('[PreviewSubmit] Sending id_kecamatan_kejadian:', kecId);
+        formDataObj.append('id_kecamatan_kejadian', kecId);
       }
       if (formData?.id_fasilitas_umum) {
         formDataObj.append('id_fasilitas_umum', String(formData.id_fasilitas_umum));
