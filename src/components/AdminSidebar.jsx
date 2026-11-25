@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import Logoapk from '../assets/Logoapk.svg';
 import LogoutConfirm from './ui/LogoutConfirm';
+import { getAdminIdentity } from '../utils/adminIdentity';
 
 const NAV_ITEMS = [
   { path: '/admin/master', label: 'Dashboard', icon: LayoutDashboard },
@@ -23,7 +24,9 @@ const SETTINGS_SUB_ITEMS = [
 
 export function AdminSidebar({ activePath }) {
   const navigate = useNavigate();
+  const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const identity = getAdminIdentity(user);
   const [logoutOpen, setLogoutOpen] = useState(false);
 
   const confirmLogout = () => {
@@ -48,7 +51,7 @@ export function AdminSidebar({ activePath }) {
           </div>
           <div className="min-w-0">
             <h2 className="text-white font-bold text-base tracking-tight leading-tight">LaporFasum</h2>
-            <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">Kabupaten Lamongan</p>
+            <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">{identity.sidebarSubtitle}</p>
           </div>
         </div>
       </div>

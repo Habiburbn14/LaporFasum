@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
 import { Toaster } from 'react-hot-toast';
 import SplashScreen from './components/ui/SplashScreen';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -40,6 +42,46 @@ function RootRedirect() {
 // Global safety fallback - force hide splash after 12 seconds max (matching SplashScreen maxDuration)
 function AppInner() {
   const [splashVisible, setSplashVisible] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pathnameRef = useRef(location.pathname);
+
+  useEffect(() => {
+    pathnameRef.current = location.pathname;
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+
+    let listenerHandle;
+    const setupBackButton = async () => {
+      listenerHandle = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+        const currentPath = pathnameRef.current;
+        const rootPaths = ['/', '/home', '/login', '/login-admin', '/admin/master', '/admin/triage'];
+
+        if (rootPaths.includes(currentPath)) {
+          CapacitorApp.exitApp();
+          return;
+        }
+
+        if (canGoBack && window.history.length > 1) {
+          navigate(-1);
+        } else if (currentPath.startsWith('/admin')) {
+          navigate('/admin/master', { replace: true });
+        } else {
+          navigate('/home', { replace: true });
+        }
+      });
+    };
+
+    setupBackButton();
+
+    return () => {
+      if (listenerHandle) {
+        listenerHandle.remove();
+      }
+    };
+  }, [navigate]);
   
   useEffect(() => {
     // Safety: force hide splash after 12 seconds max

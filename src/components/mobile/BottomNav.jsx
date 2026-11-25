@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Home, ClipboardList, Camera, Map, User, Loader2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Modal from '../ui/Modal';
@@ -13,7 +13,7 @@ function BottomNav() {
   const [processing, setProcessing] = useState(false);
 
   const navItems = [
-    { to: '/', icon: Home, label: 'Beranda' },
+    { to: '/home', icon: Home, label: 'Beranda' },
     { to: '/tracking', icon: ClipboardList, label: 'Laporan' },
     { to: '/report', icon: Camera, label: 'Lapor', isCenter: true },
     { to: '/map', icon: Map, label: 'Peta' },
@@ -109,8 +109,6 @@ function BottomNav() {
         <div className="bg-white border-t border-slate-100 shadow-[0_-4px_20px_rgba(15,23,42,0.06)] px-2 pt-3 pb-[calc(0.4rem+env(safe-area-inset-bottom))] relative">
           <div className="flex items-end justify-between">
             {navItems.map(({ to, icon: Icon, label, isCenter }) => {
-              const active = pathname === to;
-
               if (isCenter) {
                 return (
                   <div key={to} className="flex-1 flex justify-center">
@@ -151,19 +149,30 @@ function BottomNav() {
               }
 
               return (
-                <Link
+                <NavLink
                   key={to}
                   to={to}
+                  end={to === '/home'}
                   className="flex-1 flex flex-col items-center gap-1 py-1.5 rounded-xl"
                 >
-                  <Icon
-                    className={`w-5 h-5 ${active ? 'text-blue-600' : 'text-slate-400'}`}
-                    strokeWidth={active ? 2.5 : 2}
-                  />
-                  <span className={`text-[11px] font-medium ${active ? 'text-blue-600' : 'text-slate-400'}`}>
-                    {label}
-                  </span>
-                </Link>
+                  {({ isActive }) => {
+                    const active =
+                      to === '/home'
+                        ? isActive || pathname === '/home' || pathname === '/'
+                        : isActive || pathname.startsWith(`${to}/`);
+                    return (
+                      <>
+                        <Icon
+                          className={`w-5 h-5 transition-colors ${active ? 'text-blue-600' : 'text-slate-400'}`}
+                          strokeWidth={active ? 2.5 : 2}
+                        />
+                        <span className={`text-[11px] font-medium transition-colors ${active ? 'text-blue-600' : 'text-slate-400'}`}>
+                          {label}
+                        </span>
+                      </>
+                    );
+                  }}
+                </NavLink>
               );
             })}
           </div>

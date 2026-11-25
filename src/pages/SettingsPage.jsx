@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/useAuthStore';
 import AdminSidebar from '../components/AdminSidebar';
+import { getAdminIdentity } from '../utils/adminIdentity';
 
 function SettingsPage() {
   const navigate = useNavigate();
@@ -64,12 +65,13 @@ function SettingsPage() {
 }
 
 function ProfileTab({ user }) {
+  const identity = getAdminIdentity(user);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
-    nama: user?.nama_lengkap || user?.nama || 'Admin Kabupaten',
-    email: user?.email || 'admin@lamongan.go.id',
-    telepon: '081234567890',
-    unitKerja: 'Dinas PUPR Lamongan',
+    nama: identity.title,
+    email: identity.email,
+    telepon: user?.no_hp || '-',
+    unitKerja: identity.subtitle,
   });
 
   const handleSave = () => {
@@ -93,7 +95,7 @@ function ProfileTab({ user }) {
       <div className="p-6 space-y-6">
         <div className="flex items-start gap-6">
           <div className="w-24 h-24 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 text-2xl font-bold">
-            {user?.nama_lengkap?.charAt(0) || user?.nama?.charAt(0) || 'A'}
+            {identity.initials}
           </div>
           <div className="flex-1">
             <h3 className="text-lg font-semibold text-slate-900">{formData.nama}</h3>

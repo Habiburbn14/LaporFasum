@@ -12,6 +12,7 @@ import { adminAPI } from '../services/api';
 import ErrorState from '../components/ui/ErrorState';
 import NotificationPopup from '../components/ui/NotificationPopup';
 import AdminSidebar from '../components/AdminSidebar';
+import AdminUserBadge from '../components/admin/AdminUserBadge';
 
 function AnalyticsPage() {
   const navigate = useNavigate();
@@ -249,23 +250,7 @@ function AnalyticsPage() {
             </button>
 
             <NotificationPopup />
-
-            <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-                {(user?.nama_lengkap || user?.nama || 'A').charAt(0).toUpperCase()}
-              </div>
-              <div className="hidden md:block">
-                <p className="text-xs font-semibold text-slate-900 leading-tight">
-                  {user?.nama_lengkap && user.nama_lengkap !== 'Admin' && user.nama_lengkap !== 'Admin Kabupaten'
-                    ? user.nama_lengkap
-                    : (user?.nama && user.nama !== 'Admin' && user.nama !== 'Admin Kabupaten' ? user.nama : 'Admin Kabupaten Lamongan')}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <p className="text-[10px] text-slate-500">Dinas PUPR Lamongan</p>
-                </div>
-              </div>
-            </div>
+            <AdminUserBadge />
           </div>
         </header>
 
