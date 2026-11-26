@@ -14,13 +14,14 @@ import {
   ShieldCheck,
   CheckCircle2,
   ArrowLeft,
-  Check
+  Check,
+  Monitor,
+  Smartphone
 } from 'lucide-react';
 import { loginUser, loginAdmin, verifyResetAccount, resetPassword } from '../services/authApi';
 import { useAuthStore, roleOf, homePathForRole } from '../stores/useAuthStore';
 import toast from 'react-hot-toast';
 import Logoapk from '../assets/Logoapk.svg';
-import { Capacitor } from '@capacitor/core';
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -30,6 +31,27 @@ function LoginPage() {
   const [formData, setFormData] = useState({ identifier: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Detect if desktop
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const checkDesktop = () => {
+      let isNative = false;
+      try {
+        // Dynamic import for Capacitor
+        const Capacitor = require('@capacitor/core').Capacitor;
+        isNative = Capacitor.isNativePlatform();
+      } catch (e) {
+        // Capacitor not available in web build
+        isNative = false;
+      }
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      setIsDesktop(!(isNative || isMobile));
+    };
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   // State Modal Lupa Sandi (Metode 1: Verifikasi NIK + Email)
   const [showForgotModal, setShowForgotModal] = useState(false);
@@ -48,6 +70,12 @@ function LoginPage() {
     e.preventDefault();
     if (!formData.identifier || !formData.password) {
       toast.error('NIK/Email dan Password harus diisi');
+      return;
+    }
+
+    // Block regular user login on desktop (non-admin route)
+    if (!isAdminRoute && isDesktop) {
+      toast.error('Login warga hanya bisa dilakukan melalui aplikasi mobile');
       return;
     }
 
@@ -74,6 +102,13 @@ function LoginPage() {
       if (!role) {
         toast.error('Gagal memuat profil akun');
         useAuthStore.getState().logout();
+        return;
+      }
+
+      // Block regular user login on desktop
+      if (!isAdminRoute && isDesktop && role === 1) {
+        await useAuthStore.getState().logout();
+        toast.error('Login warga hanya bisa dilakukan melalui aplikasi mobile');
         return;
       }
 
@@ -269,16 +304,18 @@ function LoginPage() {
           </button>
         </form>
 
-        {/* Pendaftaran Akun */}
-        <div className="mt-8 text-center space-y-3">
-          <p className="text-xs text-slate-400 font-medium">Belum memiliki akun LaporFasum?</p>
-          <Link
-            to="/register"
-            className="inline-flex items-center justify-center w-full py-3 px-4 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-blue-600 font-bold text-sm rounded-2xl transition shadow-2xs"
-          >
-            Daftar Akun Baru
-          </Link>
-        </div>
+        {/* Pendaftaran Akun - Hanya tampil di mobile */}
+        {!isDesktop && (
+          <div className="mt-8 text-center space-y-3">
+            <p className="text-xs text-slate-400 font-medium">Belum memiliki akun LaporFasum?</p>
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center w-full py-3 px-4 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50 text-blue-600 font-bold text-sm rounded-2xl transition shadow-2xs"
+            >
+              Daftar Akun Baru
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Footer Info */}

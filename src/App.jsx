@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { App as CapacitorApp } from '@capacitor/app';
-import { Capacitor } from '@capacitor/core';
 import { Toaster } from 'react-hot-toast';
 import SplashScreen from './components/ui/SplashScreen';
 import ErrorBoundary from './components/ui/ErrorBoundary';
@@ -51,16 +49,25 @@ function AppInner() {
   }, [location.pathname]);
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return undefined;
+    let CapacitorApp = null;
+    let Capacitor = null;
+    try {
+      const CapacitorModule = require('@capacitor/core');
+      Capacitor = CapacitorModule.Capacitor;
+      CapacitorApp = require('@capacitor/app').App;
+    } catch (e) {
+      // Capacitor not available in web build
+    }
+    if (!Capacitor?.isNativePlatform?.()) return undefined;
 
     let listenerHandle;
     const setupBackButton = async () => {
-      listenerHandle = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      listenerHandle = await CapacitorApp?.addListener?.('backButton', ({ canGoBack }) => {
         const currentPath = pathnameRef.current;
         const rootPaths = ['/', '/home', '/login', '/login-admin', '/admin/master', '/admin/triage'];
 
         if (rootPaths.includes(currentPath)) {
-          CapacitorApp.exitApp();
+          CapacitorApp?.exitApp?.();
           return;
         }
 
