@@ -7,6 +7,7 @@ import WeeklyChart from '../components/mobile/WeeklyChart';
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useLaporanList } from '../hooks/useLaporanList';
 import { adminAPI } from '../services/api';
@@ -99,6 +100,66 @@ function DashboardAdminMaster() {
 
   const handleLogout = () => {
     setLogoutOpen(true);
+  };
+
+  const handleExportData = () => {
+    if (!filteredReports || filteredReports.length === 0) {
+      toast.error('Tidak ada data laporan untuk diekspor');
+      return;
+    }
+
+    const escapeCsv = (value) => {
+      const str = value === null || value === undefined ? '' : String(value);
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const headers = [
+      'ID Laporan',
+      'Pelapor',
+      'Judul Laporan',
+      'Kategori',
+      'Kecamatan',
+      'Tanggal',
+      'Status',
+      'Deskripsi',
+    ];
+
+    const rows = filteredReports.map((r) => {
+      const rawDate = r.tanggal || r.created_at;
+      const formattedDate = rawDate
+        ? new Date(rawDate).toLocaleDateString('id-ID', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+          })
+        : '-';
+      return [
+        r.id_laporan || r.ticket_code || r.id || '',
+        r.nama_lengkap || r.pelapor || '-',
+        r.judul_laporan || r.judul || '-',
+        r.kategori || r.nama_kategori || '-',
+        r.nama_kecamatan || r.kecamatan || '-',
+        formattedDate,
+        r.status_terkini || r.status || '-',
+        r.deskripsi_laporan || r.deskripsi || '',
+      ]
+        .map(escapeCsv)
+        .join(',');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.setAttribute('download', `laporan-fasum-${dateStamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success(`${filteredReports.length} laporan berhasil diekspor`);
   };
 
   const confirmLogout = () => {
@@ -326,7 +387,11 @@ function DashboardAdminMaster() {
                   <option value="Selesai">Selesai</option>
                 </select>
 
-                <button className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2 rounded-xl flex items-center gap-1.5 transition-colors">
+                <button
+                  type="button"
+                  onClick={handleExportData}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium px-4 py-2 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
                   <Download className="w-3.5 h-3.5" />
                   Export Data
                 </button>

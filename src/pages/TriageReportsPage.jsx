@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Search, ChevronDown, CheckCircle2, Clock, AlertCircle, FileText, Download, Eye, X, MapPin,
   RefreshCw, Filter, Check, ShieldCheck, Inbox, Loader2, ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useLaporanList } from '../hooks/useLaporanList';
@@ -55,6 +55,7 @@ import { ROLE, roleOf } from '../stores/useAuthStore';
 
 function TriageReportsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuthStore();
   const { reports, setReports, loading, error, reload, page, totalPages, setPage, hasMore } = useLaporanList();
   const [searchTerm, setSearchTerm] = useState('');
@@ -82,6 +83,43 @@ function TriageReportsPage() {
   const cancelLogout = () => setLogoutOpen(false);
 
   const reportId = (r) => r.id_laporan || r.ticket_code || r.id;
+
+  useEffect(() => {
+    const targetId = searchParams.get('reportId');
+    if (!targetId) return;
+
+    let cancelled = false;
+
+    const openTargetReport = async () => {
+      const localMatch = reports.find((r) => String(reportId(r)) === String(targetId));
+      if (localMatch) {
+        if (!cancelled) {
+          setSelectedReport(localMatch);
+          setSearchParams({}, { replace: true });
+        }
+        return;
+      }
+
+      if (loading) return;
+
+      try {
+        const res = await laporanAPI.getById(targetId);
+        const fetched = res?.data?.data || res?.data || (res?.id_laporan ? res : null);
+        if (!cancelled && fetched) {
+          setSelectedReport(fetched);
+          setSearchParams({}, { replace: true });
+        }
+      } catch (err) {
+        console.error('Gagal memuat detail laporan dari notifikasi:', err);
+      }
+    };
+
+    openTargetReport();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams, reports, loading, setSearchParams]);
 
   // Filter reports based on role
   const getVisibleReports = () => {

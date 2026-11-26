@@ -63,3 +63,4 @@ export function getAdminIdentity(user) {
     email: user?.email || 'admin@lamongan.go.id',
   };
 }
+
